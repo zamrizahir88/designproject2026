@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Exhibition Judging System 2026</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Additional landing page specific styles */
+        .hero-icon {
+            font-size: 64px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        
+        .landing-card {
+            text-align: center;
+            padding: 40px 24px;
+        }
+        
+        .btn-large {
+            padding: 18px 24px;
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+        
+        .footer-note {
+            margin-top: 40px;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+        
+        .version-badge {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Dark Mode Toggle Button -->
+    <button id="darkModeToggle" class="dark-mode-toggle" aria-label="Toggle dark mode">
+        🌙
+    </button>
+
+    <div class="container">
+        
+        <!-- Main Landing Card -->
+        <div class="card landing-card">
+            <div class="hero-icon">
+                🏆
+            </div>
+            <h1>
+                Exhibition Judging 2026
+                <span class="version-badge">v1.0</span>
+            </h1>
+            <p class="subtitle">
+                Industry Panel Evaluation System
+            </p>
+            
+            <div class="landing-buttons">
+                <!-- Admin Button -->
+                <a href="admin.html" class="btn btn-primary btn-large">
+                    👑 ADMIN DASHBOARD
+                </a>
+                
+                <!-- Jury Button -->
+                <a href="jury.html" class="btn btn-secondary btn-large">
+                    ⭐ JURY LOGIN
+                </a>
+            </div>
+        </div>
+        
+        <!-- Info Card -->
+        <div class="card">
+            <h3>📋 About This System</h3>
+            <p style="color: var(--text-secondary); font-size: 14px; line-height: 1.5;">
+                This system allows industry panelists to evaluate student projects digitally. 
+                Judges can log in using their unique PIN, mark groups based on the rubric, 
+                and submit scores. The admin dashboard provides live monitoring, ranking, 
+                and export capabilities.
+            </p>
+            <br>
+            <h3>📊 Rubric Criteria</h3>
+            <p style="color: var(--text-secondary); font-size: 14px; line-height: 1.5;">
+                • <strong>A1:</strong> Prototype Functionality & Execution (Weight: 5)<br>
+                • <strong>A2:</strong> Commercial Viability & Market Potential (Weight: 4)<br>
+                • <strong>A3:</strong> Innovation & Problem Solving (Weight: 4)<br>
+                • <strong>A4:</strong> Pitch & Professional Communication (Weight: 4)<br>
+                • <strong>A5:</strong> Overall Industry Recommendation (Weight: 3)<br>
+                <em>Total score calculated out of 100</em>
+            </p>
+            <br>
+            <h3>🕐 Judging Schedule</h3>
+            <p style="color: var(--text-secondary); font-size: 14px;" id="judgingInfo">
+                Loading schedule...
+            </p>
+        </div>
+        
+        <div class="footer-note">
+            © 2026 Exhibition Judging System | For Industry Panel Use Only
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initDarkMode } from './app.js';
+        
+        // Initialize dark mode toggle
+        initDarkMode();
+        
+        // Load judging schedule from Firebase
+        async function loadJudgingInfo() {
+            try {
+                const settingsRef = doc(db, 'settings', 'current');
+                const settingsDoc = await getDoc(settingsRef);
+                
+                if (settingsDoc.exists()) {
+                    const settings = settingsDoc.data();
+                    const judgingInfo = document.getElementById('judgingInfo');
+                    
+                    if (settings.judgingEndTime) {
+                        const endDate = settings.judgingEndTime.toDate();
+                        const formattedDate = endDate.toLocaleDateString('en-MY');
+                        const formattedTime = endDate.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' });
+                        judgingInfo.innerHTML = `Judging closes on <strong>${formattedDate}</strong> at <strong>${formattedTime}</strong><br>
+                                                System status: ${settings.isOpen ? '🟢 OPEN' : '🔴 CLOSED'}`;
+                    } else {
+                        judgingInfo.innerHTML = 'Judging schedule not set. Please contact administrator.';
+                    }
+                } else {
+                    document.getElementById('judgingInfo').innerHTML = 'Schedule information not available.';
+                }
+            } catch (error) {
+                console.error('Error loading judging info:', error);
+                document.getElementById('judgingInfo').innerHTML = 'Unable to load schedule. Please contact administrator.';
+            }
+        }
+        
+        loadJudgingInfo();
+        
+        // Update dark mode toggle icon based on current mode
+        function updateToggleIcon() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const toggleBtn = document.getElementById('darkModeToggle');
+            if (toggleBtn) {
+                toggleBtn.textContent = isDark ? '☀️' : '🌙';
+            }
+        }
+        
+        // Monitor theme changes
+        const observer = new MutationObserver(() => {
+            updateToggleIcon();
+        });
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+        updateToggleIcon();
+    </script>
+</body>
+</html>

@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Jury Login & Marking - Exhibition Judging</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Dark Mode Toggle Button -->
+    <button id="darkModeToggle" class="dark-mode-toggle" aria-label="Toggle dark mode">
+        🌙
+    </button>
+
+    <div class="container">
+        
+        <!-- ======================================== -->
+        <!-- SECTION 1: LOGIN FORM (shown initially) -->
+        <!-- ======================================== -->
+        <div id="loginSection" class="card">
+            <h1>⭐ Jury Login</h1>
+            <p class="subtitle">Enter your PIN to start evaluating</p>
+            
+            <div class="form-group">
+                <label>Your PIN Code</label>
+                <input type="text" id="pinInput" placeholder="e.g., JURY-4821" autocomplete="off">
+            </div>
+            
+            <div class="form-group">
+                <label>Your Full Name</label>
+                <input type="text" id="nameInput" placeholder="e.g., Dr. Ahmad bin Abdullah" autocomplete="off">
+            </div>
+            
+            <button id="loginBtn" class="btn btn-primary">Login to Continue</button>
+            
+            <div id="loginError" class="alert alert-error hidden" style="margin-top: 16px;"></div>
+        </div>
+        
+        <!-- ======================================== -->
+        <!-- SECTION 2: MARKING INTERFACE (hidden until login) -->
+        <!-- ======================================== -->
+        <div id="markingSection" class="hidden">
+            
+            <!-- Welcome Banner -->
+            <div id="welcomeBanner" class="welcome-banner">
+                <h2 id="juryNameDisplay">Welcome, Jury</h2>
+                <p>Exhibition Judging 2026</p>
+            </div>
+            
+            <!-- Check-in Button -->
+            <div class="checkin-btn">
+                <button id="checkinBtn" class="btn btn-success">✅ CHECK IN TO START EVALUATING</button>
+            </div>
+            
+            <!-- System Status Alert -->
+            <div id="systemStatusAlert" class="alert alert-info hidden"></div>
+            
+            <!-- Groups Container -->
+            <div id="groupsContainer">
+                <!-- Groups will be dynamically loaded here -->
+                <div class="spinner">Loading your assigned groups...</div>
+            </div>
+            
+        </div>
+    </div>
+
+    <script type="module">
+        import { db, auth } from './firebase-config.js';
+        import { 
+            collection, 
+            doc, 
+            getDoc, 
+            getDocs, 
+            query, 
+            where,
+            Timestamp 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { 
+            validateJuryPin, 
+            updateJuryName, 
+            juryCheckIn, 
+            getJuryAssignedGroups,
+            calculateTotal,
+            saveDraftToLocalStorage,
+            loadDraftFromLocalStorage,
+            submitFinalScore,
+            initDarkMode
+        } from './app.js';
+        
+        // Initialize dark mode
+        initDarkMode();
+        
+        // ========================================
+        // STATE VARIABLES
+        // ========================================
+        let currentJuryId = null;
+        let currentJuryPin = null;
+        let currentJuryData = null;
+        let currentGroupsData = [];
+        let isCheckedIn = false;
+        
+        // DOM Elements
+        const loginSection = document.getElementById('loginSection');
+        const markingSection = document.getElementById('markingSection');
+        const loginBtn = document.getElementById('loginBtn');
+        const pinInput = document.getElementById('pinInput');
+        const nameInput = document.getElementById('nameInput');
+        const loginError = document.getElementById('loginError');
+        const checkinBtn = document.getElementById('checkinBtn');
+        const groupsContainer = document.getElementById('groupsContainer');
+        const juryNameDisplay = document.getElementById('juryNameDisplay');
+        const systemStatusAlert = document.getElementById('systemStatusAlert');
+        
+        // ========================================
+        // HELPER: Check if judging is open
+        // ========================================
+        async function isJudgingOpen() {
+            try {
+                const settingsRef = doc(db, 'settings', 'current');
+                const settingsDoc = await getDoc(settingsRef);
+                if (settingsDoc.exists()) {
+                    const settings = settingsDoc.data();
+                    return { isOpen: settings.isOpen, endTime: settings.judgingEndTime };
+                }
+                return { isOpen: true, endTime: null };
+            } catch (error) {
+                console.error('Error checking judging status:', error);
+                return { isOpen: true, endTime: null };
+            }
+        }
+        
+        // ========================================
+        // HELPER: Display system status
+        // ========================================
+        async function updateSystemStatusAlert() {
+            const status = await isJudgingOpen();
+            if (!status.isOpen) {
+                systemStatusAlert.className = 'alert alert-error';
+                systemStatusAlert.innerHTML = '🔴 JUDGING IS CURRENTLY CLOSED. You cannot submit final scores.';
+                systemStatusAlert.classList.remove('hidden');
+            } else if (status.endTime) {
+                const now = new Date();
+                const endTime = status.endTime.toDate();
+                if (now > endTime) {
+                    systemStatusAlert.className = 'alert alert-error';
+                    systemStatusAlert.innerHTML = '⏰ JUDGING TIME HAS ENDED. You cannot submit final scores.';
+                    systemStatusAlert.classList.remove('hidden');
+                } else {
+                    const minutesLeft = Math.ceil((endTime - now) / 60000);
+                    systemStatusAlert.className = 'alert alert-info';
+                    systemStatusAlert.innerHTML = `🕐 Judging closes in approximately ${minutesLeft} minutes.`;
+                    systemStatusAlert.classList.remove('hidden');
+                }
+            } else {
+                systemStatusAlert.classList.add('hidden');
+            }
+        }
+        
+        // Refresh status every minute
+        setInterval(updateSystemStatusAlert, 60000);
+        
+        // ========================================
+        // HELPER: Render all groups
+        // ========================================
+        function renderGroups() {
+            if (!currentGroupsData.length) {
+                groupsContainer.innerHTML = '<div class="card"><p class="text-center">No groups assigned to you. Please contact administrator.</p></div>';
+                return;
+            }
+            
+            groupsContainer.innerHTML = '';
+            
+            currentGroupsData.forEach(group => {
+                const groupCard = document.createElement('div');
+                groupCard.className = `group-card ${group.isCompleted ? 'completed' : ''}`;
+                
+                // Load draft if exists and not completed
+                let draftData = null;
+                if (!group.isCompleted) {
+                    draftData = loadDraftFromLocalStorage(currentJuryPin, group.groupNumber);
+                }
+                
+                const savedRawScores = group.savedRawScores;
+                const draftRawScores = draftData ? draftData.rawScores : null;
+                
+                // Use draft if available, otherwise saved, otherwise default zeros
+                const rawScores = draftRawScores || savedRawScores || { a1: 0, a2: 0, a3: 0, a4: 0, a5: 0 };
+                const total = calculateTotal(rawScores);
+                
+                groupCard.innerHTML = `
+                    <div class="group-header">
+                        <span class="group-number">Group ${group.groupNumber}</span>
+                        ${group.isCompleted ? '<span class="badge badge-success">✓ COMPLETED</span>' : '<span class="badge badge-warning">📝 DRAFT AVAILABLE</span>'}
+                    </div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>A1: Prototype Functionality & Execution</span>
+                            <span class="slider-value" id="a1_val_${group.groupNumber}">${rawScores.a1}</span>
+                        </div>
+                        <input type="range" id="a1_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a1}" ${group.isCompleted ? 'disabled' : ''}>
+                    </div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>A2: Commercial Viability & Market Potential</span>
+                            <span class="slider-value" id="a2_val_${group.groupNumber}">${rawScores.a2}</span>
+                        </div>
+                        <input type="range" id="a2_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a2}" ${group.isCompleted ? 'disabled' : ''}>
+                    </div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>A3: Innovation & Problem Solving</span>
+                            <span class="slider-value" id="a3_val_${group.groupNumber}">${rawScores.a3}</span>
+                        </div>
+                        <input type="range" id="a3_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a3}" ${group.isCompleted ? 'disabled' : ''}>
+                    </div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>A4: Pitch & Professional Communication</span>
+                            <span class="slider-value" id="a4_val_${group.groupNumber}">${rawScores.a4}</span>
+                        </div>
+                        <input type="range" id="a4_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a4}" ${group.isCompleted ? 'disabled' : ''}>
+                    </div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>A5: Overall Industry Recommendation</span>
+                            <span class="slider-value" id="a5_val_${group.groupNumber}">${rawScores.a5}</span>
+                        </div>
+                        <input type="range" id="a5_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a5}" ${group.isCompleted ? 'disabled' : ''}>
+                    </div>
+                    
+                    <div class="total-score">
+                        <div class="label">TOTAL SCORE (OUT OF 100)</div>
+                        <div class="value" id="total_${group.groupNumber}">${total}</div>
+                    </div>
+                    
+                    ${!group.isCompleted ? `
+                        <div class="action-buttons">
+                            <button class="btn btn-secondary" id="saveDraft_${group.groupNumber}">💾 Save Draft</button>
+                            <button class="btn btn-success" id="finalSubmit_${group.groupNumber}">✓ Final Submit</button>
+                        </div>
+                    ` : `
+                        <div class="alert alert-success">
+                            ✅ Finalized on ${group.savedScore?.submittedAt ? new Date(group.savedScore.submittedAt.toDate()).toLocaleString() : 'Unknown date'}
+                        </div>
+                    `}
+                `;
+                
+                groupsContainer.appendChild(groupCard);
+                
+                // Attach event listeners if not completed
+                if (!group.isCompleted) {
+                    // Slider event listeners
+                    for (let i = 1; i <= 5; i++) {
+                        const slider = document.getElementById(`${getCriterionKey(i)}_${group.groupNumber}`);
+                        if (slider) {
+                            slider.addEventListener('input', (e) => {
+                                const val = parseInt(e.target.value);
+                                document.getElementById(`${getCriterionKey(i)}_val_${group.groupNumber}`).innerText = val;
+                                updateGroupTotal(group.groupNumber);
+                                // Auto-save to localStorage on slider change (debounced)
+                                debounceSaveDraft(group.groupNumber);
+                            });
+                        }
+                    }
+                    
+                    // Save Draft button
+                    document.getElementById(`saveDraft_${group.groupNumber}`).addEventListener('click', () => {
+                        saveDraft(group.groupNumber);
+                    });
+                    
+                    // Final Submit button
+                    document.getElementById(`finalSubmit_${group.groupNumber}`).addEventListener('click', () => {
+                        finalSubmit(group.groupNumber);
+                    });
+                }
+            });
+        }
+        
+        function getCriterionKey(num) {
+            const keys = {1: 'a1', 2: 'a2', 3: 'a3', 4: 'a4', 5: 'a5'};
+            return keys[num];
+        }
+        
+        function getCurrentRawScores(groupNumber) {
+            return {
+                a1: parseInt(document.getElementById(`a1_${groupNumber}`)?.value || 0),
+                a2: parseInt(document.getElementById(`a2_${groupNumber}`)?.value || 0),
+                a3: parseInt(document.getElementById(`a3_${groupNumber}`)?.value || 0),
+                a4: parseInt(document.getElementById(`a4_${groupNumber}`)?.value || 0),
+                a5: parseInt(document.getElementById(`a5_${groupNumber}`)?.value || 0)
+            };
+        }
+        
+        function updateGroupTotal(groupNumber) {
+            const rawScores = getCurrentRawScores(groupNumber);
+            const total = calculateTotal(rawScores);
+            const totalElem = document.getElementById(`total_${groupNumber}`);
+            if (totalElem) totalElem.innerText = total;
+        }
+        
+        let debounceTimers = {};
+        function debounceSaveDraft(groupNumber) {
+            if (debounceTimers[groupNumber]) clearTimeout(debounceTimers[groupNumber]);
+            debounceTimers[groupNumber] = setTimeout(() => {
+                saveDraft(groupNumber);
+            }, 500);
+        }
+        
+        function saveDraft(groupNumber) {
+            const rawScores = getCurrentRawScores(groupNumber);
+            const total = calculateTotal(rawScores);
+            saveDraftToLocalStorage(currentJuryPin, groupNumber, rawScores, total);
+            
+            // Show temporary feedback
+            const draftBtn = document.getElementById(`saveDraft_${groupNumber}`);
+            if (draftBtn) {
+                const originalText = draftBtn.innerText;
+                draftBtn.innerText = '✓ Draft Saved';
+                setTimeout(() => {
+                    draftBtn.innerText = originalText;
+                }, 1500);
+            }
+        }
+        
+        async function finalSubmit(groupNumber) {
+            const status = await isJudgingOpen();
+            if (!status.isOpen) {
+                alert('Judging is currently closed. Cannot submit final scores.');
+                return;
+            }
+            if (status.endTime) {
+                const now = new Date();
+                if (now > status.endTime.toDate()) {
+                    alert('Judging time has ended. Cannot submit final scores.');
+                    return;
+                }
+            }
+            
+            if (!confirm(`Submit final score for Group ${groupNumber}? You cannot edit after submission unless admin reopens.`)) {
+                return;
+            }
+            
+            const rawScores = getCurrentRawScores(groupNumber);
+            const total = calculateTotal(rawScores);
+            
+            const result = await submitFinalScore(currentJuryPin, currentJuryData.name, groupNumber, rawScores, total);
+            
+            if (result.success) {
+                alert(`Group ${groupNumber} submitted successfully!`);
+                // Refresh groups data
+                await loadGroupsData();
+                renderGroups();
+            } else {
+                alert(`Error: ${result.error}`);
+            }
+        }
+        
+        async function loadGroupsData() {
+            currentGroupsData = await getJuryAssignedGroups(currentJuryId, currentJuryData);
+        }
+        
+        // ========================================
+        // CHECK-IN FUNCTION
+        // ========================================
+        async function handleCheckIn() {
+            if (isCheckedIn) return;
+            
+            const result = await juryCheckIn(currentJuryId, currentJuryData.name);
+            if (result.success) {
+                isCheckedIn = true;
+                currentJuryData.checkedIn = true;
+                checkinBtn.disabled = true;
+                checkinBtn.innerText = '✅ CHECKED IN';
+                checkinBtn.style.opacity = '0.7';
+                
+                // Load groups after check-in
+                await loadGroupsData();
+                renderGroups();
+                updateSystemStatusAlert();
+            } else {
+                alert('Failed to check in. Please try again.');
+            }
+        }
+        
+        // ========================================
+        // LOGIN FUNCTION
+        // ========================================
+        async function handleLogin() {
+            const pin = pinInput.value.trim().toUpperCase();
+            const name = nameInput.value.trim();
+            
+            if (!pin) {
+                loginError.innerText = 'Please enter your PIN';
+                loginError.classList.remove('hidden');
+                return;
+            }
+            
+            if (!name) {
+                loginError.innerText = 'Please enter your full name';
+                loginError.classList.remove('hidden');
+                return;
+            }
+            
+            loginBtn.disabled = true;
+            loginBtn.innerText = 'Verifying...';
+            loginError.classList.add('hidden');
+            
+            const result = await validateJuryPin(pin);
+            
+            if (!result.success) {
+                loginError.innerText = result.error;
+                loginError.classList.remove('hidden');
+                loginBtn.disabled = false;
+                loginBtn.innerText = 'Login to Continue';
+                return;
+            }
+            
+            // Update jury name in database
+            await updateJuryName(result.juryId, name);
+            
+            currentJuryId = result.juryId;
+            currentJuryPin = pin;
+            currentJuryData = result.juryData;
+            currentJuryData.name = name;
+            isCheckedIn = currentJuryData.checkedIn || false;
+            
+            // Update welcome banner
+            juryNameDisplay.innerText = `Welcome, ${name}`;
+            
+            // Switch to marking section
+            loginSection.classList.add('hidden');
+            markingSection.classList.remove('hidden');
+            
+            // If already checked in, load groups immediately
+            if (isCheckedIn) {
+                checkinBtn.disabled = true;
+                checkinBtn.innerText = '✅ CHECKED IN';
+                checkinBtn.style.opacity = '0.7';
+                await loadGroupsData();
+                renderGroups();
+            } else {
+                groupsContainer.innerHTML = '<div class="card"><p class="text-center">Please click CHECK IN to start evaluating.</p></div>';
+            }
+            
+            updateSystemStatusAlert();
+            
+            loginBtn.disabled = false;
+            loginBtn.innerText = 'Login to Continue';
+        }
+        
+        // ========================================
+        // EVENT LISTENERS
+        // ========================================
+        loginBtn.addEventListener('click', handleLogin);
+        pinInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+        nameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+        checkinBtn.addEventListener('click', handleCheckIn);
+        
+        // Press Enter on PIN input moves to name
+        pinInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') nameInput.focus();
+        });
+        
+        // Update dark mode toggle icon
+        function updateToggleIcon() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const toggleBtn = document.getElementById('darkModeToggle');
+            if (toggleBtn) {
+                toggleBtn.textContent = isDark ? '☀️' : '🌙';
+            }
+        }
+        
+        const observer = new MutationObserver(() => updateToggleIcon());
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+        updateToggleIcon();
+    </script>
+</body>
+</html>
