@@ -128,40 +128,49 @@ export async function juryCheckIn(juryId, juryName) {
 
 // Get jury's assigned groups with their scores
 export async function getJuryAssignedGroups(juryId, juryData) {
-  const assignedGroups = juryData.assignedGroups || [];
-  const completedGroups = juryData.completedGroups || [];
-  
-  const groupsData = [];
-  
-  for (const groupNum of assignedGroups) {
-    // Get existing final score for this jury-group
-    const scoresRef = collection(db, 'scores');
-    const q = query(
-      scoresRef, 
-      where('juryPin', '==', juryData.pin),
-      where('groupNumber', '==', groupNum),
-      where('isFinal', '==', true)
-    );
-    const scoreSnapshot = await getDocs(q);
+    const assignedGroups = juryData.assignedGroups || [];
+    const completedGroups = juryData.completedGroups || [];
     
-    let existingScore = null;
-    let existingRawScores = null;
+    const groupsData = [];
     
-    if (!scoreSnapshot.empty) {
-      const scoreDoc = scoreSnapshot.docs[0];
-      existingScore = scoreDoc.data();
-      existingRawScores = existingScore.rawScores;
+    for (const groupNum of assignedGroups) {
+        // Fetch group details from groups collection
+        const groupRef = doc(db, 'groups', groupNum.toString());
+        const groupDoc = await getDoc(groupRef);
+        const groupDetails = groupDoc.exists() ? groupDoc.data() : {};
+        
+        // Get existing final score for this jury-group
+        const scoresRef = collection(db, 'scores');
+        const q = query(
+            scoresRef, 
+            where('juryPin', '==', juryData.pin),
+            where('groupNumber', '==', groupNum),
+            where('isFinal', '==', true)
+        );
+        const scoreSnapshot = await getDocs(q);
+        
+        let existingScore = null;
+        let existingRawScores = null;
+        
+        if (!scoreSnapshot.empty) {
+            const scoreDoc = scoreSnapshot.docs[0];
+            existingScore = scoreDoc.data();
+            existingRawScores = existingScore.rawScores;
+        }
+        
+        groupsData.push({
+            groupNumber: groupNum,
+            mainSV: groupDetails.mainSV || 'Not assigned',
+            coSV: groupDetails.coSV || 'Not assigned',
+            students: groupDetails.students || [],
+            studentCount: groupDetails.studentCount || 0,
+            isCompleted: completedGroups.includes(groupNum),
+            savedScore: existingScore,
+            savedRawScores: existingRawScores
+        });
     }
     
-    groupsData.push({
-      groupNumber: groupNum,
-      isCompleted: completedGroups.includes(groupNum),
-      savedScore: existingScore,
-      savedRawScores: existingRawScores
-    });
-  }
-  
-  return groupsData;
+    return groupsData;
 }
 
 // Save draft to localStorage (not Firebase)

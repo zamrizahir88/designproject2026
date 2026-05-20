@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Import Groups - Exhibition System</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .import-container {
+            max-width: 900px;
+            margin: 50px auto;
+        }
+        .preview-table {
+            font-size: 12px;
+            overflow-x: auto;
+        }
+        .preview-table td, .preview-table th {
+            padding: 8px;
+            border: 1px solid var(--border);
+            vertical-align: top;
+        }
+        .preview-table .student-list {
+            font-size: 11px;
+            margin: 0;
+            padding-left: 16px;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+        }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container import-container">
+        <div class="card">
+            <h1>📤 Bulk Import Groups</h1>
+            <p class="subtitle">Upload CSV with student data (multiple rows per group)</p>
+            
+            <div class="warning">
+                <strong>📋 Expected CSV Format:</strong><br>
+                Group, Student Name, Matric Number, Program, Main SV, Co SV<br>
+                (First row should be headers)
+            </div>
+            
+            <div class="form-group">
+                <label>CSV File</label>
+                <input type="file" id="csvFile" accept=".csv">
+            </div>
+            
+            <button id="previewBtn" class="btn btn-secondary">Preview Data</button>
+            <button id="importBtn" class="btn btn-primary" disabled>Import to Firebase</button>
+            
+            <div id="previewArea" class="hidden" style="margin-top: 20px;">
+                <h3>Preview (Group Summary)</h3>
+                <div class="preview-table" id="previewTable"></div>
+            </div>
+            
+            <div id="status" class="hidden status"></div>
+        </div>
+        
+        <div class="card">
+            <h3>📝 Your CSV Should Look Like:</h3>
+            <pre style="background: #f4f4f4; padding: 10px; border-radius: 8px; overflow-x: auto; font-size: 11px;">
+Group,Student Name,Matric Number,Program,Main SV,Co SV
+1,MOHAMAD IBRAHIM ADHAM BIN ROHAIDI,241302495,UR6523009 - REKA BENTUK RANGKAIAN ELEKTRONIK,Ts. Dr. Liyana binti Zahid,Dr. Zarimawaty binti Zailan
+1,MUHAMMAD ANAS NAUFAL BIN RUSSLI,231371757,UR6523007 - SISTEM ELEKTRONIK,Ts. Dr. Liyana binti Zahid,Dr. Zarimawaty binti Zailan
+2,SREEVARAN A/L SATISKUMAR,231391789,UR6523008 - REKA BENTUK TELEKOMUNIKASI ELEKTRONIK,Ts. Ili Salwani binti Mohamad,Associate Professor Dr. Wee Fwen Hoon</pre>
+        </div>
+        
+        <div class="card">
+            <h3>➕ Manual Add Single Group</h3>
+            <button id="manualGroupBtn" class="btn btn-secondary">Add Single Group</button>
+            <div id="manualForm" class="hidden" style="margin-top: 16px;">
+                <input type="number" id="manualGroupNum" placeholder="Group Number" style="margin-bottom: 8px; width: 100%;">
+                <input type="text" id="manualMainSV" placeholder="Main Supervisor" style="margin-bottom: 8px; width: 100%;">
+                <input type="text" id="manualCoSV" placeholder="Co-Supervisor" style="margin-bottom: 8px; width: 100%;">
+                <textarea id="manualStudents" placeholder="Students (one per line: Name | Matric | Program)" rows="4" style="margin-bottom: 8px; width: 100%;"></textarea>
+                <button id="saveManualBtn" class="btn btn-primary">Save Group</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { collection, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
+        let importedGroups = new Map(); // groupNumber -> group data
+        
+        function parseCSVToGroups(text) {
+            const lines = text.split('\n');
+            const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+            
+            // Find column indices
+            const groupIdx = headers.findIndex(h => h.toLowerCase().includes('group'));
+            const nameIdx = headers.findIndex(h => h.toLowerCase().includes('student name'));
+            const matricIdx = headers.findIndex(h => h.toLowerCase().includes('matric'));
+            const programIdx = headers.findIndex(h => h.toLowerCase().includes('program'));
+            const mainSVIdx = headers.findIndex(h => h.toLowerCase().includes('main sv') || h.toLowerCase().includes('main'));
+            const coSVIdx = headers.findIndex(h => h.toLowerCase().includes('co sv') || h.toLowerCase().includes('co'));
+            
+            if (groupIdx === -1) {
+                alert('Could not find "Group" column. Check your CSV headers.');
+                return null;
+            }
+            
+            const groups = new Map();
+            
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                
+                // Parse CSV line (handles quoted fields)
+                let line = lines[i];
+                let inQuote = false;
+                let field = '';
+                let fields = [];
+                
+                for (let char of line) {
+                    if (char === '"') {
+                        inQuote = !inQuote;
+                    } else if (char === ',' && !inQuote) {
+                        fields.push(field.trim());
+                        field = '';
+                    } else {
+                        field += char;
+                    }
+                }
+                fields.push(field.trim());
+                
+                // Clean quotes from fields
+                fields = fields.map(f => f.replace(/^"|"$/g, ''));
+                
+                const groupNum = parseInt(fields[groupIdx]);
+                if (isNaN(groupNum)) continue;
+                
+                const studentName = fields[nameIdx] || '';
+                const matricNo = fields[matricIdx] || '';
+                const program = fields[programIdx] || '';
+                const mainSV = fields[mainSVIdx] || '';
+                const coSV = fields[coSVIdx] || '';
+                
+                if (!groups.has(groupNum)) {
+                    groups.set(groupNum, {
+                        groupNumber: groupNum,
+                        mainSV: mainSV,
+                        coSV: coSV,
+                        students: []
+                    });
+                }
+                
+                // Only add student if name exists
+                if (studentName) {
+                    groups.get(groupNum).students.push({
+                        name: studentName,
+                        matric: matricNo,
+                        program: program
+                    });
+                }
+                
+                // Update SV if later rows have different values (should be same but just in case)
+                const group = groups.get(groupNum);
+                if (mainSV && !group.mainSV) group.mainSV = mainSV;
+                if (coSV && !group.coSV) group.coSV = coSV;
+            }
+            
+            return groups;
+        }
+        
+        function displayPreview(groupsMap) {
+            const previewDiv = document.getElementById('previewTable');
+            let html = '<thead><tr><th>Group</th><th>Main SV</th><th>Co SV</th><th>Students</th><th>Total</th></tr></thead><tbody>';
+            
+            const sortedGroups = Array.from(groupsMap.values()).sort((a,b) => a.groupNumber - b.groupNumber);
+            
+            sortedGroups.forEach(group => {
+                html += `<tr>
+                    <td><strong>${group.groupNumber}</strong></td>
+                    <td>${group.mainSV || '-'}</td>
+                    <td>${group.coSV || '-'}</td>
+                    <td>
+                        <ul class="student-list" style="margin:0; padding-left:16px;">
+                            ${group.students.map(s => `<li>${s.name}<br><small>${s.matric} | ${s.program.substring(0,30)}</small></li>`).join('')}
+                        </ul>
+                    </td>
+                    <td>${group.students.length}</td>
+                </tr>`;
+            });
+            
+            html += '</tbody>';
+            previewDiv.innerHTML = html;
+            document.getElementById('previewArea').classList.remove('hidden');
+        }
+        
+        async function importToFirebase(groupsMap) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = 'status info';
+            statusDiv.innerHTML = '⏳ Importing to Firebase... Please wait.';
+            statusDiv.classList.remove('hidden');
+            
+            let success = 0;
+            let failed = 0;
+            
+            for (const [groupNum, group] of groupsMap) {
+                try {
+                    const groupRef = doc(db, 'groups', groupNum.toString());
+                    
+                    // Prepare student data as array of objects
+                    const studentsArray = group.students.map(s => ({
+                        name: s.name,
+                        matric: s.matric,
+                        program: s.program
+                    }));
+                    
+                    await setDoc(groupRef, {
+                        number: group.groupNumber,
+                        mainSV: group.mainSV || '',
+                        coSV: group.coSV || '',
+                        students: studentsArray,
+                        studentCount: studentsArray.length,
+                        finalAverage: 0,
+                        rank: 0,
+                        tieBreakDetails: {
+                            a1_avg: 0,
+                            a2_avg: 0,
+                            a3_avg: 0,
+                            a4_avg: 0,
+                            a5_avg: 0
+                        },
+                        createdAt: new Date()
+                    });
+                    success++;
+                } catch (error) {
+                    console.error(`Failed to import group ${groupNum}:`, error);
+                    failed++;
+                }
+            }
+            
+            statusDiv.className = 'status success';
+            statusDiv.innerHTML = `✅ Import complete! ${success} groups added, ${failed} failed.`;
+            
+            if (success > 0) {
+                statusDiv.innerHTML += '<br>📊 Refresh your admin dashboard to see the data.';
+            }
+        }
+        
+        // Event Listeners
+        let currentGroups = null;
+        
+        document.getElementById('csvFile').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const text = event.target.result;
+                currentGroups = parseCSVToGroups(text);
+                if (currentGroups && currentGroups.size > 0) {
+                    displayPreview(currentGroups);
+                    document.getElementById('importBtn').disabled = false;
+                    document.getElementById('status').classList.add('hidden');
+                } else {
+                    alert('No valid data found in CSV. Check format and headers.');
+                }
+            };
+            reader.readAsText(file);
+        });
+        
+        document.getElementById('previewBtn').addEventListener('click', () => {
+            const file = document.getElementById('csvFile').files[0];
+            if (!file) {
+                alert('Please select a CSV file first');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                currentGroups = parseCSVToGroups(event.target.result);
+                displayPreview(currentGroups);
+                document.getElementById('importBtn').disabled = false;
+            };
+            reader.readAsText(file);
+        });
+        
+        document.getElementById('importBtn').addEventListener('click', () => {
+            if (currentGroups && currentGroups.size > 0) {
+                if (confirm(`Import ${currentGroups.size} groups to Firebase? This will overwrite existing groups with the same numbers.`)) {
+                    importToFirebase(currentGroups);
+                }
+            }
+        });
+        
+        // Manual group addition
+        document.getElementById('manualGroupBtn').addEventListener('click', () => {
+            const form = document.getElementById('manualForm');
+            form.classList.toggle('hidden');
+        });
+        
+        document.getElementById('saveManualBtn').addEventListener('click', async () => {
+            const groupNum = parseInt(document.getElementById('manualGroupNum').value);
+            const mainSV = document.getElementById('manualMainSV').value;
+            const coSV = document.getElementById('manualCoSV').value;
+            const studentsText = document.getElementById('manualStudents').value;
+            
+            if (!groupNum) {
+                alert('Please enter group number');
+                return;
+            }
+            
+            // Parse students (format: Name | Matric | Program per line)
+            const students = [];
+            const lines = studentsText.split('\n');
+            for (const line of lines) {
+                if (line.trim()) {
+                    const parts = line.split('|').map(p => p.trim());
+                    students.push({
+                        name: parts[0] || '',
+                        matric: parts[1] || '',
+                        program: parts[2] || ''
+                    });
+                }
+            }
+            
+            if (students.length === 0) {
+                alert('Please add at least one student');
+                return;
+            }
+            
+            try {
+                const groupRef = doc(db, 'groups', groupNum.toString());
+                await setDoc(groupRef, {
+                    number: groupNum,
+                    mainSV: mainSV,
+                    coSV: coSV,
+                    students: students,
+                    studentCount: students.length,
+                    finalAverage: 0,
+                    rank: 0,
+                    tieBreakDetails: {
+                        a1_avg: 0, a2_avg: 0, a3_avg: 0, a4_avg: 0, a5_avg: 0
+                    }
+                });
+                alert(`Group ${groupNum} added successfully with ${students.length} students!`);
+                
+                // Clear form
+                document.getElementById('manualGroupNum').value = '';
+                document.getElementById('manualMainSV').value = '';
+                document.getElementById('manualCoSV').value = '';
+                document.getElementById('manualStudents').value = '';
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        });
+    </script>
+</body>
+</html>

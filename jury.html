@@ -189,68 +189,88 @@
                 const total = calculateTotal(rawScores);
                 
                 groupCard.innerHTML = `
-                    <div class="group-header">
-                        <span class="group-number">Group ${group.groupNumber}</span>
-                        ${group.isCompleted ? '<span class="badge badge-success">✓ COMPLETED</span>' : '<span class="badge badge-warning">📝 DRAFT AVAILABLE</span>'}
+    <div class="group-header">
+        <span class="group-number">Group ${group.groupNumber}</span>
+        ${group.isCompleted ? '<span class="badge badge-success">✓ COMPLETED</span>' : '<span class="badge badge-warning">📝 DRAFT</span>'}
+    </div>
+    
+    <!-- Group Details Card -->
+    <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-secondary); border-radius: 12px;">
+        <div style="margin-bottom: 8px;">
+            <strong>👨‍🏫 Main Supervisor:</strong> ${group.mainSV || 'Not assigned'}<br>
+            <strong>👩‍🏫 Co-Supervisor:</strong> ${group.coSV || 'Not assigned'}
+        </div>
+        <details>
+            <summary style="cursor: pointer; font-weight: 500; margin-bottom: 8px;">
+                📋 Team Members (${group.students?.length || 0})
+            </summary>
+            <div style="font-size: 13px; margin-top: 8px; max-height: 200px; overflow-y: auto;">
+                ${group.students?.map(s => `
+                    <div style="padding: 6px 0; border-bottom: 1px solid var(--border);">
+                        <strong>${s.name}</strong><br>
+                        <small>${s.matric} | ${s.program}</small>
                     </div>
-                    
-                    <div class="slider-group">
-                        <div class="slider-label">
-                            <span>A1: Prototype Functionality & Execution</span>
-                            <span class="slider-value" id="a1_val_${group.groupNumber}">${rawScores.a1}</span>
-                        </div>
-                        <input type="range" id="a1_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a1}" ${group.isCompleted ? 'disabled' : ''}>
-                    </div>
-                    
-                    <div class="slider-group">
-                        <div class="slider-label">
-                            <span>A2: Commercial Viability & Market Potential</span>
-                            <span class="slider-value" id="a2_val_${group.groupNumber}">${rawScores.a2}</span>
-                        </div>
-                        <input type="range" id="a2_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a2}" ${group.isCompleted ? 'disabled' : ''}>
-                    </div>
-                    
-                    <div class="slider-group">
-                        <div class="slider-label">
-                            <span>A3: Innovation & Problem Solving</span>
-                            <span class="slider-value" id="a3_val_${group.groupNumber}">${rawScores.a3}</span>
-                        </div>
-                        <input type="range" id="a3_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a3}" ${group.isCompleted ? 'disabled' : ''}>
-                    </div>
-                    
-                    <div class="slider-group">
-                        <div class="slider-label">
-                            <span>A4: Pitch & Professional Communication</span>
-                            <span class="slider-value" id="a4_val_${group.groupNumber}">${rawScores.a4}</span>
-                        </div>
-                        <input type="range" id="a4_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a4}" ${group.isCompleted ? 'disabled' : ''}>
-                    </div>
-                    
-                    <div class="slider-group">
-                        <div class="slider-label">
-                            <span>A5: Overall Industry Recommendation</span>
-                            <span class="slider-value" id="a5_val_${group.groupNumber}">${rawScores.a5}</span>
-                        </div>
-                        <input type="range" id="a5_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a5}" ${group.isCompleted ? 'disabled' : ''}>
-                    </div>
-                    
-                    <div class="total-score">
-                        <div class="label">TOTAL SCORE (OUT OF 100)</div>
-                        <div class="value" id="total_${group.groupNumber}">${total}</div>
-                    </div>
-                    
-                    ${!group.isCompleted ? `
-                        <div class="action-buttons">
-                            <button class="btn btn-secondary" id="saveDraft_${group.groupNumber}">💾 Save Draft</button>
-                            <button class="btn btn-success" id="finalSubmit_${group.groupNumber}">✓ Final Submit</button>
-                        </div>
-                    ` : `
-                        <div class="alert alert-success">
-                            ✅ Finalized on ${group.savedScore?.submittedAt ? new Date(group.savedScore.submittedAt.toDate()).toLocaleString() : 'Unknown date'}
-                        </div>
-                    `}
-                `;
-                
+                `).join('') || 'No students listed'}
+            </div>
+        </details>
+    </div>
+    
+    <div class="slider-group">
+        <div class="slider-label">
+            <span>A1: Prototype Functionality & Execution (Weight: 5)</span>
+            <span class="slider-value" id="a1_val_${group.groupNumber}">${rawScores.a1}</span>
+        </div>
+        <input type="range" id="a1_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a1}" ${group.isCompleted ? 'disabled' : ''}>
+    </div>
+    
+    <div class="slider-group">
+        <div class="slider-label">
+            <span>A2: Commercial Viability & Market Potential (Weight: 4)</span>
+            <span class="slider-value" id="a2_val_${group.groupNumber}">${rawScores.a2}</span>
+        </div>
+        <input type="range" id="a2_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a2}" ${group.isCompleted ? 'disabled' : ''}>
+    </div>
+    
+    <div class="slider-group">
+        <div class="slider-label">
+            <span>A3: Innovation & Problem Solving (Weight: 4)</span>
+            <span class="slider-value" id="a3_val_${group.groupNumber}">${rawScores.a3}</span>
+        </div>
+        <input type="range" id="a3_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a3}" ${group.isCompleted ? 'disabled' : ''}>
+    </div>
+    
+    <div class="slider-group">
+        <div class="slider-label">
+            <span>A4: Pitch & Professional Communication (Weight: 4)</span>
+            <span class="slider-value" id="a4_val_${group.groupNumber}">${rawScores.a4}</span>
+        </div>
+        <input type="range" id="a4_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a4}" ${group.isCompleted ? 'disabled' : ''}>
+    </div>
+    
+    <div class="slider-group">
+        <div class="slider-label">
+            <span>A5: Overall Industry Recommendation (Weight: 3)</span>
+            <span class="slider-value" id="a5_val_${group.groupNumber}">${rawScores.a5}</span>
+        </div>
+        <input type="range" id="a5_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a5}" ${group.isCompleted ? 'disabled' : ''}>
+    </div>
+    
+    <div class="total-score">
+        <div class="label">TOTAL SCORE (OUT OF 100)</div>
+        <div class="value" id="total_${group.groupNumber}">${total}</div>
+    </div>
+    
+    ${!group.isCompleted ? `
+        <div class="action-buttons">
+            <button class="btn btn-secondary" id="saveDraft_${group.groupNumber}">💾 Save Draft</button>
+            <button class="btn btn-success" id="finalSubmit_${group.groupNumber}">✓ Final Submit</button>
+        </div>
+    ` : `
+        <div class="alert alert-success">
+            ✅ Finalized on ${group.savedScore?.submittedAt ? new Date(group.savedScore.submittedAt.toDate()).toLocaleString() : 'Unknown date'}
+        </div>
+    `}
+`;
                 groupsContainer.appendChild(groupCard);
                 
                 // Attach event listeners if not completed
