@@ -2,22 +2,431 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Jury Login & Marking - Exhibition Judging</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Jury Marking - Exhibition Judging</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Additional styles for tabs and collapsible sections */
+        
+        /* Tab Bar */
+        .tab-bar-container {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--bg-card);
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 16px;
+            border-radius: 12px 12px 0 0;
+        }
+        
+        .tab-bar {
+            display: flex;
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            scrollbar-width: thin;
+            -webkit-overflow-scrolling: touch;
+            padding: 8px 4px;
+            gap: 4px;
+        }
+        
+        .tab-bar::-webkit-scrollbar {
+            height: 3px;
+        }
+        
+        .tab {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 70px;
+            padding: 10px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        .tab.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        
+        .tab-status {
+            font-size: 16px;
+            margin-top: 4px;
+        }
+        
+        .tab-label {
+            font-weight: 600;
+        }
+        
+        /* Progress Bar */
+        .progress-container {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .progress-bar-bg {
+            background: var(--border);
+            border-radius: 20px;
+            height: 12px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            background: linear-gradient(90deg, #06d6a0, #4361ee);
+            width: 0%;
+            height: 100%;
+            border-radius: 20px;
+            transition: width 0.3s ease;
+        }
+        
+        /* Collapsible Section */
+        .collapsible-section {
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .collapsible-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .collapsible-header:hover {
+            background: var(--border-light);
+        }
+        
+        .collapsible-header h4 {
+            margin: 0;
+            font-size: 15px;
+        }
+        
+        .collapsible-content {
+            padding: 0 16px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+            background: var(--bg-card);
+        }
+        
+        .collapsible-content.expanded {
+            padding: 16px;
+            max-height: 500px;
+        }
+        
+        /* Student item */
+        .student-item {
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+        
+        .student-item:last-child {
+            border-bottom: none;
+        }
+        
+        .student-name {
+            font-weight: 600;
+        }
+        
+        .student-details {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        
+        /* Rubric item */
+        .rubric-item {
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+        }
+        
+        .rubric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        
+        .rubric-title {
+            font-weight: 700;
+            font-size: 15px;
+        }
+        
+        .rubric-weight {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .info-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 20px;
+            transition: background 0.2s;
+            color: var(--accent);
+        }
+        
+        .info-btn:hover {
+            background: var(--bg-secondary);
+        }
+        
+        .rubric-description {
+            margin-top: 12px;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+            display: none;
+        }
+        
+        .rubric-description.show {
+            display: block;
+        }
+        
+        .rubric-description p {
+            margin: 8px 0;
+        }
+        
+        .rubric-description strong {
+            color: var(--accent);
+        }
+        
+        .slider-container {
+            margin: 16px 0;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .slider-value {
+            font-weight: 700;
+            color: var(--accent);
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: var(--border);
+            border-radius: 3px;
+        }
+        
+        input[type="range"]:focus {
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+        }
+        
+        input[type="range"]:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Group info section */
+        .group-info {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .group-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .group-sv {
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        
+        /* Swipe hint */
+        .swipe-hint {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            padding: 8px;
+            display: none;
+        }
+        
+        @media (max-width: 600px) {
+            .swipe-hint {
+                display: block;
+            }
+            .tab {
+                min-width: 60px;
+                padding: 8px 10px;
+                font-size: 11px;
+            }
+        }
+        
+        /* Start Evaluating Button */
+        .start-evaluating-btn {
+            background: linear-gradient(135deg, #ffb703, #fb8500);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .start-evaluating-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .disabled-message {
+            text-align: center;
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            color: var(--text-secondary);
+        }
+        
+        /* Check-in button */
+        .checkin-btn {
+            margin-bottom: 20px;
+        }
+        
+        /* Welcome banner */
+        .welcome-banner {
+            background: linear-gradient(135deg, #4361ee, #7209b7);
+            color: white;
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        /* Total score box */
+        .total-score {
+            background: linear-gradient(135deg, #4361ee, #7209b7);
+            color: white;
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        /* Action buttons */
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .action-buttons .btn {
+            flex: 1;
+        }
+        
+        /* Disabled rubric container */
+        .rubric-disabled {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        /* Modal for confirmation */
+        .confirm-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .confirm-modal-content {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 300px;
+            text-align: center;
+        }
+        
+        .confirm-modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .confirm-modal-buttons button {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .confirm-yes {
+            background: #06d6a0;
+            color: white;
+        }
+        
+        .confirm-no {
+            background: var(--btn-secondary);
+            color: var(--text-primary);
+        }
+    </style>
 </head>
 <body>
 
-    <!-- Dark Mode Toggle Button -->
-    <button id="darkModeToggle" class="dark-mode-toggle" aria-label="Toggle dark mode">
-        🌙
-    </button>
+    <button id="darkModeToggle" class="dark-mode-toggle">🌙</button>
 
     <div class="container">
         
-        <!-- ======================================== -->
-        <!-- SECTION 1: LOGIN FORM (shown initially) -->
-        <!-- ======================================== -->
+        <!-- SECTION 1: LOGIN FORM -->
         <div id="loginSection" class="card">
             <h1>⭐ Jury Login</h1>
             <p class="subtitle">Enter your PIN to start evaluating</p>
@@ -27,7 +436,6 @@
                 <input type="text" id="pinInput" placeholder="e.g., JURY-4821" autocomplete="off">
             </div>
             
-            <!-- Name field - hidden by default, shown only if no name exists in database -->
             <div id="nameFieldGroup" class="form-group hidden">
                 <label>Your Full Name</label>
                 <input type="text" id="nameInput" placeholder="e.g., Dr. Ahmad bin Abdullah" autocomplete="off">
@@ -35,38 +443,60 @@
             
             <button id="loginBtn" class="btn btn-primary">Login to Continue</button>
             
-            <!-- Welcome back message (shown when returning user) -->
             <div id="welcomeBackMessage" class="alert alert-info hidden" style="margin-top: 12px;"></div>
-            
-            <!-- Error message -->
             <div id="loginError" class="alert alert-error hidden" style="margin-top: 12px;"></div>
         </div>
         
-        <!-- ======================================== -->
-        <!-- SECTION 2: MARKING INTERFACE (hidden until login) -->
-        <!-- ======================================== -->
+        <!-- SECTION 2: MARKING INTERFACE -->
         <div id="markingSection" class="hidden">
             
-            <!-- Welcome Banner -->
-            <div id="welcomeBanner" class="welcome-banner">
+            <div class="welcome-banner">
                 <h2 id="juryNameDisplay">Welcome, Jury</h2>
                 <p>Exhibition Judging 2026</p>
             </div>
             
-            <!-- Check-in Button -->
             <div class="checkin-btn">
                 <button id="checkinBtn" class="btn btn-success">✅ CHECK IN TO START EVALUATING</button>
             </div>
             
-            <!-- System Status Alert -->
             <div id="systemStatusAlert" class="alert alert-info hidden"></div>
             
-            <!-- Groups Container -->
-            <div id="groupsContainer">
-                <!-- Groups will be dynamically loaded here -->
-                <div class="spinner">Loading your assigned groups...</div>
+            <!-- Progress Bar -->
+            <div class="progress-container">
+                <div class="progress-header">
+                    <span>📊 YOUR PROGRESS</span>
+                    <span id="progressText">0 of 0 groups</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="progressFill"></div>
+                </div>
             </div>
             
+            <!-- Swipe Hint -->
+            <div class="swipe-hint">
+                👉 Swipe left/right on tabs to switch groups 👈
+            </div>
+            
+            <!-- Tab Bar -->
+            <div class="tab-bar-container">
+                <div class="tab-bar" id="tabBar"></div>
+            </div>
+            
+            <!-- Group Content Container -->
+            <div id="groupContentContainer"></div>
+            
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="confirm-modal" style="display: none;">
+        <div class="confirm-modal-content">
+            <h3>🎬 Start Evaluating</h3>
+            <p>Are you ready to evaluate <strong id="confirmGroupName"></strong> now?</p>
+            <div class="confirm-modal-buttons">
+                <button id="confirmYesBtn" class="confirm-yes">Yes, Start</button>
+                <button id="confirmNoBtn" class="confirm-no">Cancel</button>
+            </div>
         </div>
     </div>
 
@@ -79,13 +509,15 @@
             getDocs, 
             query, 
             where,
-            Timestamp 
+            Timestamp,
+            updateDoc,
+            addDoc,
+            setDoc
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { 
             validateJuryPin, 
             updateJuryName, 
             juryCheckIn, 
-            getJuryAssignedGroups,
             calculateTotal,
             saveDraftToLocalStorage,
             loadDraftFromLocalStorage,
@@ -93,17 +525,110 @@
             initDarkMode
         } from './app.js';
         
-        // Initialize dark mode
         initDarkMode();
         
         // ========================================
-        // STATE VARIABLES
+        // RUBRIC DATA
         // ========================================
+        const RUBRIC_DATA = {
+            a1: {
+                title: "A1: Prototype Functionality & Execution",
+                weight: 5,
+                description: {
+                    0: "Not Available - Fails to demonstrate core concepts; poor integration. Prototype is non-functional.",
+                    1: "Very Poor - Functions basically but needs frequent manual help or has major glitches.",
+                    2: "Poor - Proves the concept adequately but lacks refinement or seamless integration.",
+                    3: "Average - Functions reliably with minor flaws; hardware and software integration are smooth.",
+                    4: "Good - Fully functional, robust, and market-ready; flawless hardware/software integration.",
+                    5: "Excellent - Outstanding execution beyond expectations."
+                }
+            },
+            a2: {
+                title: "A2: Commercial Viability & Market Potential",
+                weight: 4,
+                description: {
+                    0: "Not Available - No commercial potential; totally impractical, too expensive, or lacking in a market.",
+                    1: "Very Poor - Has a target market but struggles to justify why a user would choose this over competitor.",
+                    2: "Poor - Clear audience but lacks a highly competitive value proposition or branding.",
+                    3: "Average - Cost-effective, practical, and highly appealing to the target market.",
+                    4: "Good - Clear path to commercialization with an outstanding, highly persuasive value proposition.",
+                    5: "Excellent - Exceptional commercial potential with clear market advantage."
+                }
+            },
+            a3: {
+                title: "A3: Innovation & Problem Solving",
+                weight: 4,
+                description: {
+                    0: "Not Available - Fails to address a clear problem; relies entirely on outdated or generic methods.",
+                    1: "Very Poor - Addresses a problem but lacks originality and relies on unoptimized methods.",
+                    2: "Poor - Offers a standard solution to a known problem with minimal improvements.",
+                    3: "Average - Introduces a novel solution or a significant improvement to a relevant industry problem.",
+                    4: "Good - An entirely novel approach that disrupts or vastly improves current market standards.",
+                    5: "Excellent - Revolutionary innovation with significant industry impact."
+                }
+            },
+            a4: {
+                title: "A4: Pitch & Professional Communication",
+                weight: 4,
+                description: {
+                    0: "Not Available - Team cannot clearly explain the project or answer basic questions from the panel.",
+                    1: "Very Poor - Relies heavily on reading the poster; struggles to answer industry or technical questions.",
+                    2: "Poor - Covers the basics but lacks persuasive energy; answers questions adequately.",
+                    3: "Average - Confident, engaging pitch; effectively uses the prototype; defends design decisions well.",
+                    4: "Good - Highly persuasive, entrepreneurial pitch; confidently defends product value to experts.",
+                    5: "Excellent - Exceptional presentation skills with compelling storytelling."
+                }
+            },
+            a4: {
+                title: "A4: Pitch & Professional Communication",
+                weight: 4,
+                description: {
+                    0: "Not Available - Team cannot clearly explain the project or answer basic questions from the panel.",
+                    1: "Very Poor - Relies heavily on reading the poster; struggles to answer industry or technical questions.",
+                    2: "Poor - Covers the basics but lacks persuasive energy; answers questions adequately.",
+                    3: "Average - Confident, engaging pitch; effectively uses the prototype; defends design decisions well.",
+                    4: "Good - Highly persuasive, entrepreneurial pitch; confidently defends product value to experts.",
+                    5: "Excellent - Exceptional presentation skills with compelling storytelling."
+                }
+            },
+            a5: {
+                title: "A5: Overall Industry Recommendation",
+                weight: 3,
+                description: {
+                    0: "Not Available - Project is not recommended; not viable for industry adoption or investment.",
+                    1: "Very Poor - Slightly recommended; needs major overhauls before industry consideration.",
+                    2: "Poor - Moderately recommended; has potential but requires significant refinement.",
+                    3: "Average - Recommended; strong project; team shows great promise for industry integration.",
+                    4: "Good - Highly recommended; exceptional project; would readily invest in or hire this team.",
+                    5: "Excellent - Top recommendation; industry-ready with outstanding potential."
+                }
+            }
+        };
+        
+        // Fix A4 duplicate - correct A4
+        RUBRIC_DATA.a4 = {
+            title: "A4: Pitch & Professional Communication",
+            weight: 4,
+            description: {
+                0: "Not Available - Team cannot clearly explain the project or answer basic questions from the panel.",
+                1: "Very Poor - Relies heavily on reading the poster; struggles to answer industry or technical questions.",
+                2: "Poor - Covers the basics but lacks persuasive energy; answers questions adequately.",
+                3: "Average - Confident, engaging pitch; effectively uses the prototype; defends design decisions well.",
+                4: "Good - Highly persuasive, entrepreneurial pitch; confidently defends product value to experts.",
+                5: "Excellent - Exceptional presentation skills with compelling storytelling."
+            }
+        };
+        
+        // State variables
         let currentJuryId = null;
         let currentJuryPin = null;
         let currentJuryData = null;
         let currentGroupsData = [];
         let isCheckedIn = false;
+        let currentGroupIndex = 0;
+        let activeRubricCriterion = null;
+        let activeEvaluationGroup = null; // Track which group is currently being evaluated
+        let pendingStartGroup = null;
         
         // DOM Elements
         const loginSection = document.getElementById('loginSection');
@@ -115,13 +640,87 @@
         const loginError = document.getElementById('loginError');
         const welcomeBackMessage = document.getElementById('welcomeBackMessage');
         const checkinBtn = document.getElementById('checkinBtn');
-        const groupsContainer = document.getElementById('groupsContainer');
         const juryNameDisplay = document.getElementById('juryNameDisplay');
         const systemStatusAlert = document.getElementById('systemStatusAlert');
+        const tabBar = document.getElementById('tabBar');
+        const groupContentContainer = document.getElementById('groupContentContainer');
+        const progressText = document.getElementById('progressText');
+        const progressFill = document.getElementById('progressFill');
+        const confirmModal = document.getElementById('confirmModal');
+        const confirmGroupName = document.getElementById('confirmGroupName');
+        const confirmYesBtn = document.getElementById('confirmYesBtn');
+        const confirmNoBtn = document.getElementById('confirmNoBtn');
         
         // ========================================
-        // HELPER: Check if judging is open
+        // EVALUATION STATUS FUNCTIONS
         // ========================================
+        
+        // Update evaluation status in Firebase
+        async function updateEvaluationStatus(groupNumber, status, startedAt = null) {
+            if (!currentJuryPin) return;
+            
+            const statusRef = doc(db, 'evaluation_status', `${currentJuryPin}_${groupNumber}`);
+            const statusData = {
+                juryPin: currentJuryPin,
+                juryName: currentJuryData.name,
+                groupNumber: groupNumber,
+                status: status, // 'active', 'completed', 'not_started'
+                updatedAt: Timestamp.now()
+            };
+            
+            if (startedAt) {
+                statusData.startedAt = startedAt;
+            }
+            
+            if (status === 'active' && !startedAt) {
+                statusData.startedAt = Timestamp.now();
+            }
+            
+            if (status === 'completed') {
+                statusData.completedAt = Timestamp.now();
+            }
+            
+            await setDoc(statusRef, statusData, { merge: true });
+        }
+        
+        // Get evaluation status for a group
+        async function getEvaluationStatus(groupNumber) {
+            if (!currentJuryPin) return 'not_started';
+            
+            try {
+                const statusRef = doc(db, 'evaluation_status', `${currentJuryPin}_${groupNumber}`);
+                const statusDoc = await getDoc(statusRef);
+                if (statusDoc.exists()) {
+                    return statusDoc.data().status;
+                }
+            } catch (error) {
+                console.error('Error getting status:', error);
+            }
+            return 'not_started';
+        }
+        
+        // Start evaluating a group
+        async function startEvaluating(groupNumber, groupName) {
+            // Check if already evaluating another group
+            if (activeEvaluationGroup && activeEvaluationGroup !== groupNumber) {
+                // Auto-close previous active group
+                await updateEvaluationStatus(activeEvaluationGroup, 'not_started');
+            }
+            
+            await updateEvaluationStatus(groupNumber, 'active', Timestamp.now());
+            activeEvaluationGroup = groupNumber;
+            
+            // Refresh the current group view to enable rubric
+            renderGroupContent();
+            
+            // Update tab bar to show active status
+            renderTabs();
+        }
+        
+        // ========================================
+        // HELPER FUNCTIONS
+        // ========================================
+        
         async function isJudgingOpen() {
             try {
                 const settingsRef = doc(db, 'settings', 'current');
@@ -132,14 +731,10 @@
                 }
                 return { isOpen: true, endTime: null };
             } catch (error) {
-                console.error('Error checking judging status:', error);
                 return { isOpen: true, endTime: null };
             }
         }
         
-        // ========================================
-        // HELPER: Display system status
-        // ========================================
         async function updateSystemStatusAlert() {
             const status = await isJudgingOpen();
             if (!status.isOpen) {
@@ -164,26 +759,19 @@
             }
         }
         
-        // Refresh status every minute
         setInterval(updateSystemStatusAlert, 60000);
         
-        // ========================================
-        // HELPER: Check if PIN exists and get name
-        // ========================================
         async function checkPinExists(pin) {
             try {
                 const juriesRef = collection(db, 'juries');
                 const q = query(juriesRef, where('pin', '==', pin));
                 const querySnapshot = await getDocs(q);
-                
                 if (querySnapshot.empty) {
                     return { exists: false, hasName: false, name: null, juryId: null, juryData: null };
                 }
-                
                 const juryDoc = querySnapshot.docs[0];
                 const juryData = juryDoc.data();
                 const hasName = juryData.name && juryData.name !== '';
-                
                 return {
                     exists: true,
                     hasName: hasName,
@@ -192,30 +780,22 @@
                     juryData: juryData
                 };
             } catch (error) {
-                console.error('Error checking PIN:', error);
                 return { exists: false, hasName: false, name: null, juryId: null, juryData: null };
             }
         }
         
-        // ========================================
-        // HELPER: Show/hide name field based on PIN
-        // ========================================
-        async function updateNameFieldVisibility() {
+        pinInput.addEventListener('input', async () => {
             const pin = pinInput.value.trim().toUpperCase();
             if (pin.length >= 4) {
                 const result = await checkPinExists(pin);
-                
                 if (result.exists && result.hasName) {
-                    // Name already exists - hide name field, show welcome message
                     nameFieldGroup.classList.add('hidden');
                     welcomeBackMessage.innerHTML = `👋 Welcome back, ${result.name}! Please enter your PIN and click Login.`;
                     welcomeBackMessage.classList.remove('hidden');
                 } else if (result.exists && !result.hasName) {
-                    // PIN exists but no name - show name field (first time setup)
                     nameFieldGroup.classList.remove('hidden');
                     welcomeBackMessage.classList.add('hidden');
                 } else {
-                    // PIN doesn't exist - hide name field, clear welcome message
                     nameFieldGroup.classList.add('hidden');
                     welcomeBackMessage.classList.add('hidden');
                 }
@@ -223,158 +803,43 @@
                 nameFieldGroup.classList.add('hidden');
                 welcomeBackMessage.classList.add('hidden');
             }
+        });
+        
+        function updateProgress() {
+            if (!currentGroupsData.length) return;
+            const completedCount = currentGroupsData.filter(g => g.isCompleted).length;
+            const percent = (completedCount / currentGroupsData.length) * 100;
+            progressText.innerText = `${completedCount} of ${currentGroupsData.length} groups completed`;
+            progressFill.style.width = `${percent}%`;
         }
         
-        // Listen to PIN input changes
-        pinInput.addEventListener('input', updateNameFieldVisibility);
-        pinInput.addEventListener('blur', updateNameFieldVisibility);
+        function getGroupStatusIcon(group) {
+            if (group.isCompleted) return '✅';
+            if (activeEvaluationGroup === group.groupNumber) return '🟡';
+            // Check if has draft
+            const draftKey = `draft_${currentJuryPin}_${group.groupNumber}`;
+            const hasDraft = localStorage.getItem(draftKey);
+            if (hasDraft) return '📝';
+            return '🔴';
+        }
         
-        // ========================================
-        // HELPER: Render all groups
-        // ========================================
-        function renderGroups() {
-            if (!currentGroupsData.length) {
-                groupsContainer.innerHTML = '<div class="card"><p class="text-center">No groups assigned to you. Please contact administrator.</p></div>';
-                return;
-            }
-            
-            groupsContainer.innerHTML = '';
-            
-            currentGroupsData.forEach(group => {
-                const groupCard = document.createElement('div');
-                groupCard.className = `group-card ${group.isCompleted ? 'completed' : ''}`;
-                
-                // Load draft if exists and not completed
-                let draftData = null;
-                if (!group.isCompleted) {
-                    draftData = loadDraftFromLocalStorage(currentJuryPin, group.groupNumber);
-                }
-                
-                const savedRawScores = group.savedRawScores;
-                const draftRawScores = draftData ? draftData.rawScores : null;
-                
-                // Use draft if available, otherwise saved, otherwise default zeros
-                const rawScores = draftRawScores || savedRawScores || { a1: 0, a2: 0, a3: 0, a4: 0, a5: 0 };
-                const total = calculateTotal(rawScores);
-                
-                groupCard.innerHTML = `
-                    <div class="group-header">
-                        <span class="group-number">Group ${group.groupNumber}</span>
-                        ${group.isCompleted ? '<span class="badge badge-success">✓ COMPLETED</span>' : '<span class="badge badge-warning">📝 DRAFT</span>'}
-                    </div>
-                    
-                    <!-- Group Details Card -->
-                    <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-secondary); border-radius: 12px;">
-                        <div style="margin-bottom: 8px;">
-                            <strong>👨‍🏫 Main Supervisor:</strong> ${group.mainSV || 'Not assigned'}<br>
-                            <strong>👩‍🏫 Co-Supervisor:</strong> ${group.coSV || 'Not assigned'}
-                        </div>
-                        <details>
-                            <summary style="cursor: pointer; font-weight: 500; margin-bottom: 8px;">
-                                📋 Team Members (${group.students?.length || 0})
-                            </summary>
-                            <div style="font-size: 13px; margin-top: 8px; max-height: 200px; overflow-y: auto;">
-                                ${group.students?.map(s => `
-                                    <div style="padding: 6px 0; border-bottom: 1px solid var(--border);">
-                                        <strong>${s.name}</strong><br>
-                                        <small>${s.matric} | ${s.program}</small>
-                                    </div>
-                                `).join('') || 'No students listed'}
-                            </div>
-                        </details>
-                    </div>
-                    
-                    <div class="slider-group">
-                        <div class="slider-label">
-                            <span>A1: Prototype Functionality & Execution (Weight: 5)</span>
-                            <span class="slider-value" id="a1_val_${group.groupNumber}">${rawScores.a1}</span>
-                        </div>
-                        <input type="range" id="a1_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a1}" ${group.isCompleted ? 'disabled' : ''}>
-                    </div>
-                    
-                    <div class="slider-group">
-                        <div class="slider-label">
-                            <span>A2: Commercial Viability & Market Potential (Weight: 4)</span>
-                            <span class="slider-value" id="a2_val_${group.groupNumber}">${rawScores.a2}</span>
-                        </div>
-                        <input type="range" id="a2_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a2}" ${group.isCompleted ? 'disabled' : ''}>
-                    </div>
-                    
-                    <div class="slider-group">
-                        <div class="slider-label">
-                            <span>A3: Innovation & Problem Solving (Weight: 4)</span>
-                            <span class="slider-value" id="a3_val_${group.groupNumber}">${rawScores.a3}</span>
-                        </div>
-                        <input type="range" id="a3_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a3}" ${group.isCompleted ? 'disabled' : ''}>
-                    </div>
-                    
-                    <div class="slider-group">
-                        <div class="slider-label">
-                            <span>A4: Pitch & Professional Communication (Weight: 4)</span>
-                            <span class="slider-value" id="a4_val_${group.groupNumber}">${rawScores.a4}</span>
-                        </div>
-                        <input type="range" id="a4_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a4}" ${group.isCompleted ? 'disabled' : ''}>
-                    </div>
-                    
-                    <div class="slider-group">
-                        <div class="slider-label">
-                            <span>A5: Overall Industry Recommendation (Weight: 3)</span>
-                            <span class="slider-value" id="a5_val_${group.groupNumber}">${rawScores.a5}</span>
-                        </div>
-                        <input type="range" id="a5_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a5}" ${group.isCompleted ? 'disabled' : ''}>
-                    </div>
-                    
-                    <div class="total-score">
-                        <div class="label">TOTAL SCORE (OUT OF 100)</div>
-                        <div class="value" id="total_${group.groupNumber}">${total}</div>
-                    </div>
-                    
-                    ${!group.isCompleted ? `
-                        <div class="action-buttons">
-                            <button class="btn btn-secondary" id="saveDraft_${group.groupNumber}">💾 Save Draft</button>
-                            <button class="btn btn-success" id="finalSubmit_${group.groupNumber}">✓ Final Submit</button>
-                        </div>
-                    ` : `
-                        <div class="alert alert-success">
-                            ✅ Finalized on ${group.savedScore?.submittedAt ? new Date(group.savedScore.submittedAt.toDate()).toLocaleString() : 'Unknown date'}
-                        </div>
-                    `}
+        function renderTabs() {
+            if (!currentGroupsData.length) return;
+            tabBar.innerHTML = '';
+            currentGroupsData.forEach((group, idx) => {
+                const tab = document.createElement('div');
+                tab.className = `tab ${idx === currentGroupIndex ? 'active' : ''}`;
+                tab.innerHTML = `
+                    <div class="tab-label">Group ${group.groupNumber}</div>
+                    <div class="tab-status">${getGroupStatusIcon(group)}</div>
                 `;
-                
-                groupsContainer.appendChild(groupCard);
-                
-                // Attach event listeners if not completed
-                if (!group.isCompleted) {
-                    // Slider event listeners
-                    for (let i = 1; i <= 5; i++) {
-                        const slider = document.getElementById(`${getCriterionKey(i)}_${group.groupNumber}`);
-                        if (slider) {
-                            slider.addEventListener('input', (e) => {
-                                const val = parseInt(e.target.value);
-                                document.getElementById(`${getCriterionKey(i)}_val_${group.groupNumber}`).innerText = val;
-                                updateGroupTotal(group.groupNumber);
-                                // Auto-save to localStorage on slider change (debounced)
-                                debounceSaveDraft(group.groupNumber);
-                            });
-                        }
-                    }
-                    
-                    // Save Draft button
-                    document.getElementById(`saveDraft_${group.groupNumber}`).addEventListener('click', () => {
-                        saveDraft(group.groupNumber);
-                    });
-                    
-                    // Final Submit button
-                    document.getElementById(`finalSubmit_${group.groupNumber}`).addEventListener('click', () => {
-                        finalSubmit(group.groupNumber);
-                    });
-                }
+                tab.addEventListener('click', async () => {
+                    currentGroupIndex = idx;
+                    renderTabs();
+                    await renderGroupContent();
+                });
+                tabBar.appendChild(tab);
             });
-        }
-        
-        function getCriterionKey(num) {
-            const keys = {1: 'a1', 2: 'a2', 3: 'a3', 4: 'a4', 5: 'a5'};
-            return keys[num];
         }
         
         function getCurrentRawScores(groupNumber) {
@@ -406,8 +871,6 @@
             const rawScores = getCurrentRawScores(groupNumber);
             const total = calculateTotal(rawScores);
             saveDraftToLocalStorage(currentJuryPin, groupNumber, rawScores, total);
-            
-            // Show temporary feedback
             const draftBtn = document.getElementById(`saveDraft_${groupNumber}`);
             if (draftBtn) {
                 const originalText = draftBtn.innerText;
@@ -424,44 +887,258 @@
                 alert('Judging is currently closed. Cannot submit final scores.');
                 return;
             }
-            if (status.endTime) {
-                const now = new Date();
-                if (now > status.endTime.toDate()) {
-                    alert('Judging time has ended. Cannot submit final scores.');
-                    return;
-                }
-            }
-            
-            if (!confirm(`Submit final score for Group ${groupNumber}? You cannot edit after submission unless admin reopens.`)) {
+            if (status.endTime && new Date() > status.endTime.toDate()) {
+                alert('Judging time has ended. Cannot submit final scores.');
                 return;
             }
+            if (!confirm(`Submit final score for Group ${groupNumber}? You can still edit until system closes.`)) return;
             
             const rawScores = getCurrentRawScores(groupNumber);
             const total = calculateTotal(rawScores);
-            
             const result = await submitFinalScore(currentJuryPin, currentJuryData.name, groupNumber, rawScores, total);
             
             if (result.success) {
+                // Update evaluation status to completed
+                await updateEvaluationStatus(groupNumber, 'completed');
+                if (activeEvaluationGroup === groupNumber) {
+                    activeEvaluationGroup = null;
+                }
                 alert(`Group ${groupNumber} submitted successfully!`);
                 await loadGroupsData();
-                renderGroups();
+                renderTabs();
+                await renderGroupContent();
+                updateProgress();
             } else {
                 alert(`Error: ${result.error}`);
             }
         }
         
-        async function loadGroupsData() {
-            if (currentJuryId && currentJuryData) {
-                currentGroupsData = await getJuryAssignedGroups(currentJuryId, currentJuryData);
+        function toggleRubric(criterionId, groupNumber) {
+            const rubricId = `rubric_${criterionId}_${groupNumber}`;
+            const element = document.getElementById(rubricId);
+            if (activeRubricCriterion === rubricId) {
+                element.classList.remove('show');
+                activeRubricCriterion = null;
+            } else {
+                if (activeRubricCriterion) {
+                    const prevElement = document.getElementById(activeRubricCriterion);
+                    if (prevElement) prevElement.classList.remove('show');
+                }
+                element.classList.add('show');
+                activeRubricCriterion = rubricId;
             }
         }
         
-        // ========================================
-        // CHECK-IN FUNCTION
-        // ========================================
+        // Show confirmation modal for start evaluating
+        function showStartConfirm(groupNumber, groupName) {
+            pendingStartGroup = groupNumber;
+            confirmGroupName.innerText = `Group ${groupNumber}`;
+            confirmModal.style.display = 'flex';
+        }
+        
+        // Handle confirm start
+        confirmYesBtn.addEventListener('click', async () => {
+            if (pendingStartGroup) {
+                await startEvaluating(pendingStartGroup);
+                confirmModal.style.display = 'none';
+                pendingStartGroup = null;
+            }
+        });
+        
+        confirmNoBtn.addEventListener('click', () => {
+            confirmModal.style.display = 'none';
+            pendingStartGroup = null;
+        });
+        
+        async function renderGroupContent() {
+            if (!currentGroupsData.length) return;
+            const group = currentGroupsData[currentGroupIndex];
+            const groupNumber = group.groupNumber;
+            
+            // Get current evaluation status for this group
+            const evalStatus = await getEvaluationStatus(groupNumber);
+            const isActive = (evalStatus === 'active') || (activeEvaluationGroup === groupNumber);
+            const isCompleted = group.isCompleted;
+            
+            // Update activeEvaluationGroup if needed
+            if (isActive && activeEvaluationGroup !== groupNumber) {
+                activeEvaluationGroup = groupNumber;
+            }
+            
+            const draftData = loadDraftFromLocalStorage(currentJuryPin, groupNumber);
+            const savedRawScores = group.savedRawScores;
+            const draftRawScores = draftData ? draftData.rawScores : null;
+            const rawScores = draftRawScores || savedRawScores || { a1: 0, a2: 0, a3: 0, a4: 0, a5: 0 };
+            const total = calculateTotal(rawScores);
+            
+            let studentsHtml = '';
+            if (group.students && group.students.length) {
+                studentsHtml = `
+                    <div class="collapsible-section">
+                        <div class="collapsible-header" onclick="window.toggleCollapsible('students_${groupNumber}')">
+                            <h4>👥 TEAM MEMBERS (${group.students.length})</h4>
+                            <span>▼</span>
+                        </div>
+                        <div class="collapsible-content" id="students_${groupNumber}">
+                            ${group.students.map(s => `
+                                <div class="student-item">
+                                    <div class="student-name">${s.name}</div>
+                                    <div class="student-details">${s.matric} | ${s.program}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            let rubricsHtml = '';
+            const criteria = ['a1', 'a2', 'a3', 'a4', 'a5'];
+            criteria.forEach(criterion => {
+                const data = RUBRIC_DATA[criterion];
+                const score = rawScores[criterion];
+                rubricsHtml += `
+                    <div class="rubric-item">
+                        <div class="rubric-header">
+                            <div>
+                                <span class="rubric-title">${data.title}</span>
+                                <span class="rubric-weight"> (Weight: ${data.weight})</span>
+                            </div>
+                            <button class="info-btn" onclick="window.toggleRubric('${criterion}', ${groupNumber})">ℹ️</button>
+                        </div>
+                        <div class="rubric-description" id="rubric_${criterion}_${groupNumber}">
+                            ${Object.entries(data.description).map(([scoreVal, desc]) => `
+                                <p><strong>${scoreVal} (${scoreVal === '0' ? 'NA' : scoreVal === '1' ? 'VP' : scoreVal === '2' ? 'P' : scoreVal === '3' ? 'AVG' : scoreVal === '4' ? 'G' : 'E'}):</strong> ${desc}</p>
+                            `).join('')}
+                        </div>
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>Score (0-5):</span>
+                                <span class="slider-value" id="${criterion}_val_${groupNumber}">${score}</span>
+                            </div>
+                            <input type="range" id="${criterion}_${groupNumber}" min="0" max="5" step="1" value="${score}" ${(!isActive && !isCompleted) ? 'disabled' : ''}>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            let actionButtonsHtml = '';
+            if (!isCompleted) {
+                if (isActive) {
+                    actionButtonsHtml = `
+                        <div class="action-buttons">
+                            <button class="btn btn-secondary" id="saveDraft_${groupNumber}">💾 Save Draft</button>
+                            <button class="btn btn-success" id="finalSubmit_${groupNumber}">✓ Final Submit</button>
+                        </div>
+                    `;
+                } else {
+                    actionButtonsHtml = `
+                        <button class="start-evaluating-btn" id="startEval_${groupNumber}">🎬 START EVALUATING</button>
+                    `;
+                }
+            } else {
+                actionButtonsHtml = `
+                    <div class="alert alert-success">
+                        ✅ Completed on ${group.savedScore?.submittedAt ? new Date(group.savedScore.submittedAt.toDate()).toLocaleString() : 'Unknown date'}
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn btn-secondary" id="saveDraft_${groupNumber}">💾 Save Draft</button>
+                        <button class="btn btn-success" id="finalSubmit_${groupNumber}">✓ Update Submit</button>
+                    </div>
+                `;
+            }
+            
+            groupContentContainer.innerHTML = `
+                <div class="group-info">
+                    <div class="group-title">Group ${group.groupNumber}</div>
+                    <div class="group-sv"><strong>👨‍🏫 Main Supervisor:</strong> ${group.mainSV || 'Not assigned'}</div>
+                    <div class="group-sv"><strong>👩‍🏫 Co-Supervisor:</strong> ${group.coSV || 'Not assigned'}</div>
+                </div>
+                ${studentsHtml}
+                ${!isActive && !isCompleted ? `<div class="disabled-message">⚠️ Click "Start Evaluating" to enable rubric and begin marking this group.</div>` : ''}
+                ${rubricsHtml}
+                <div class="total-score">
+                    <div class="label">TOTAL SCORE (OUT OF 100)</div>
+                    <div class="value" id="total_${groupNumber}">${total}</div>
+                </div>
+                ${actionButtonsHtml}
+            `;
+            
+            // Attach slider events if active or completed
+            if (isActive || isCompleted) {
+                criteria.forEach(criterion => {
+                    const slider = document.getElementById(`${criterion}_${groupNumber}`);
+                    if (slider && !slider.disabled) {
+                        slider.addEventListener('input', (e) => {
+                            const val = parseInt(e.target.value);
+                            document.getElementById(`${criterion}_val_${groupNumber}`).innerText = val;
+                            updateGroupTotal(groupNumber);
+                            debounceSaveDraft(groupNumber);
+                        });
+                    }
+                });
+            }
+            
+            const draftBtn = document.getElementById(`saveDraft_${groupNumber}`);
+            if (draftBtn) draftBtn.addEventListener('click', () => saveDraft(groupNumber));
+            
+            const submitBtn = document.getElementById(`finalSubmit_${groupNumber}`);
+            if (submitBtn) submitBtn.addEventListener('click', () => finalSubmit(groupNumber));
+            
+            const startBtn = document.getElementById(`startEval_${groupNumber}`);
+            if (startBtn) startBtn.addEventListener('click', () => showStartConfirm(groupNumber, group.groupNumber));
+        }
+        
+        window.toggleRubric = toggleRubric;
+        window.toggleCollapsible = (id) => {
+            const element = document.getElementById(id);
+            const header = element.previousElementSibling;
+            element.classList.toggle('expanded');
+            if (header) {
+                const arrow = header.querySelector('span:last-child');
+                if (arrow) arrow.innerText = element.classList.contains('expanded') ? '▲' : '▼';
+            }
+        };
+        
+        async function loadGroupsData() {
+            if (!currentJuryId || !currentJuryData) return;
+            const assignedGroups = currentJuryData.assignedGroups || [];
+            const completedGroups = currentJuryData.completedGroups || [];
+            const groupsData = [];
+            
+            for (const groupNum of assignedGroups) {
+                const groupRef = doc(db, 'groups', groupNum.toString());
+                const groupDoc = await getDoc(groupRef);
+                const groupDetails = groupDoc.exists() ? groupDoc.data() : {};
+                
+                const scoresRef = collection(db, 'scores');
+                const q = query(scoresRef, where('juryPin', '==', currentJuryData.pin), where('groupNumber', '==', groupNum), where('isFinal', '==', true));
+                const scoreSnapshot = await getDocs(q);
+                
+                let existingScore = null;
+                let existingRawScores = null;
+                if (!scoreSnapshot.empty) {
+                    const scoreDoc = scoreSnapshot.docs[0];
+                    existingScore = scoreDoc.data();
+                    existingRawScores = existingScore.rawScores;
+                }
+                
+                groupsData.push({
+                    groupNumber: groupNum,
+                    mainSV: groupDetails.mainSV || 'Not assigned',
+                    coSV: groupDetails.coSV || 'Not assigned',
+                    students: groupDetails.students || [],
+                    isCompleted: completedGroups.includes(groupNum),
+                    savedScore: existingScore,
+                    savedRawScores: existingRawScores
+                });
+            }
+            currentGroupsData = groupsData;
+            currentGroupIndex = 0;
+            updateProgress();
+        }
+        
         async function handleCheckIn() {
             if (isCheckedIn) return;
-            
             const result = await juryCheckIn(currentJuryId, currentJuryData.name);
             if (result.success) {
                 isCheckedIn = true;
@@ -469,21 +1146,17 @@
                 checkinBtn.disabled = true;
                 checkinBtn.innerText = '✅ CHECKED IN';
                 checkinBtn.style.opacity = '0.7';
-                
                 await loadGroupsData();
-                renderGroups();
+                renderTabs();
+                await renderGroupContent();
                 updateSystemStatusAlert();
             } else {
                 alert('Failed to check in. Please try again.');
             }
         }
         
-        // ========================================
-        // LOGIN FUNCTION (UPDATED)
-        // ========================================
         async function handleLogin() {
             const pin = pinInput.value.trim().toUpperCase();
-            
             if (!pin) {
                 loginError.innerText = 'Please enter your PIN';
                 loginError.classList.remove('hidden');
@@ -496,7 +1169,6 @@
             welcomeBackMessage.classList.add('hidden');
             
             const pinCheck = await checkPinExists(pin);
-            
             if (!pinCheck.exists) {
                 loginError.innerText = 'Invalid PIN. Please check and try again.';
                 loginError.classList.remove('hidden');
@@ -505,10 +1177,8 @@
                 return;
             }
             
-            // Case 1: PIN exists but has no name (first time login)
             if (pinCheck.exists && !pinCheck.hasName) {
                 const enteredName = nameInput.value.trim();
-                
                 if (!enteredName) {
                     loginError.innerText = 'Please enter your full name';
                     loginError.classList.remove('hidden');
@@ -516,40 +1186,27 @@
                     loginBtn.innerText = 'Login to Continue';
                     return;
                 }
-                
-                // Save their name
                 await updateJuryName(pinCheck.juryId, enteredName);
                 currentJuryData = { ...pinCheck.juryData, name: enteredName };
                 currentJuryId = pinCheck.juryId;
-                
-                // Show welcome message
                 const welcomeMsg = document.getElementById('welcomeBackMessage');
                 welcomeMsg.innerHTML = `✨ Welcome, ${enteredName}! You are now logged in.`;
                 welcomeMsg.classList.remove('hidden');
                 welcomeMsg.className = 'alert alert-success';
-                
                 await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-            // Case 2: PIN exists and has name (returning user)
-            else if (pinCheck.exists && pinCheck.hasName) {
+            } else if (pinCheck.exists && pinCheck.hasName) {
                 currentJuryData = pinCheck.juryData;
                 currentJuryId = pinCheck.juryId;
-                
-                // Show welcome back message
                 welcomeBackMessage.innerHTML = `👋 Welcome back, ${pinCheck.name}!`;
                 welcomeBackMessage.classList.remove('hidden');
                 welcomeBackMessage.className = 'alert alert-success';
-                
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
             
             currentJuryPin = pin;
             isCheckedIn = currentJuryData.checkedIn || false;
-            
-            // Update welcome banner
             juryNameDisplay.innerText = `Welcome, ${currentJuryData.name}`;
             
-            // Switch to marking section
             loginSection.classList.add('hidden');
             markingSection.classList.remove('hidden');
             
@@ -558,9 +1215,10 @@
                 checkinBtn.innerText = '✅ CHECKED IN';
                 checkinBtn.style.opacity = '0.7';
                 await loadGroupsData();
-                renderGroups();
+                renderTabs();
+                await renderGroupContent();
             } else {
-                groupsContainer.innerHTML = '<div class="card"><p class="text-center">Please click CHECK IN to start evaluating.</p></div>';
+                groupContentContainer.innerHTML = '<div class="card"><p class="text-center">Please click CHECK IN to start evaluating.</p></div>';
             }
             
             updateSystemStatusAlert();
@@ -568,15 +1226,11 @@
             loginBtn.innerText = 'Login to Continue';
         }
         
-        // ========================================
-        // EVENT LISTENERS
-        // ========================================
         loginBtn.addEventListener('click', handleLogin);
         pinInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
         nameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
         checkinBtn.addEventListener('click', handleCheckIn);
         
-        // Update dark mode toggle icon
         function updateToggleIcon() {
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             const toggleBtn = document.getElementById('darkModeToggle');

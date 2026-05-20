@@ -2,9 +2,305 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Admin Dashboard - Exhibition Judging</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Tab Bar Styles */
+        .tab-bar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--bg-card);
+            display: flex;
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            scrollbar-width: thin;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 16px;
+            border-radius: 12px 12px 0 0;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .tab-bar::-webkit-scrollbar {
+            height: 3px;
+        }
+        
+        .tab {
+            flex: 1;
+            min-width: 100px;
+            padding: 14px 8px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        
+        .tab.active {
+            color: var(--accent);
+            border-bottom: 3px solid var(--accent);
+            background: transparent;
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: var(--bg-card);
+            padding: 16px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+        
+        .stat-number {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--accent);
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        
+        /* Status Tables */
+        .status-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        
+        .status-table th, .status-table td {
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .status-table th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        
+        /* Section Headers */
+        .section-header {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 20px 0 12px 0;
+            padding: 8px 12px;
+            border-radius: 10px;
+        }
+        
+        .section-active {
+            background: rgba(255, 183, 3, 0.15);
+            border-left: 4px solid #ffb703;
+        }
+        
+        .section-wait {
+            background: rgba(239, 35, 60, 0.1);
+            border-left: 4px solid #ef233c;
+        }
+        
+        .section-completed {
+            background: rgba(6, 214, 160, 0.1);
+            border-left: 4px solid #06d6a0;
+        }
+        
+        /* Status Badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 20px;
+        }
+        
+        .status-active {
+            background: #ffb70320;
+            color: #ffb703;
+        }
+        
+        .status-completed {
+            background: #06d6a020;
+            color: #06d6a0;
+        }
+        
+        .status-draft {
+            background: #ffb70320;
+            color: #ffb703;
+        }
+        
+        .status-notstarted {
+            background: #ef233c20;
+            color: #ef233c;
+        }
+        
+        /* Panel Row (Expandable) */
+        .panel-row {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            cursor: pointer;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            transition: background 0.2s;
+        }
+        
+        .panel-header:hover {
+            background: var(--bg-secondary);
+        }
+        
+        .panel-name {
+            font-weight: 700;
+            font-size: 16px;
+        }
+        
+        .panel-stats {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .panel-content {
+            padding: 16px;
+            display: none;
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+        }
+        
+        .panel-content.expanded {
+            display: block;
+        }
+        
+        .group-status-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .group-status-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            font-size: 13px;
+        }
+        
+        /* Progress bar small */
+        .progress-bar-small {
+            width: 100px;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+            display: inline-block;
+            margin-left: 8px;
+        }
+        
+        .progress-fill-small {
+            height: 100%;
+            background: linear-gradient(90deg, #06d6a0, #4361ee);
+            width: 0%;
+            border-radius: 3px;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 600px) {
+            .tab {
+                min-width: 70px;
+                font-size: 11px;
+                padding: 12px 4px;
+            }
+            .status-table th, .status-table td {
+                padding: 8px 4px;
+                font-size: 11px;
+            }
+            .group-status-item {
+                font-size: 11px;
+                padding: 4px 8px;
+            }
+        }
+        
+        .attention-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            background: var(--bg-secondary);
+        }
+        
+        .attention-zero {
+            border-left: 4px solid #ef233c;
+        }
+        
+        .attention-one {
+            border-left: 4px solid #ffb703;
+        }
+        
+        .btn-small-icon {
+            padding: 6px 10px;
+            font-size: 12px;
+            margin: 0 2px;
+        }
+        
+        .delete-selected-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .swipe-hint {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            padding: 8px;
+            display: none;
+        }
+        
+        @media (max-width: 600px) {
+            .swipe-hint {
+                display: block;
+            }
+        }
+    </style>
 </head>
 <body>
 
@@ -12,7 +308,8 @@
 
     <div class="container">
         
-        <div class="card">
+        <!-- Admin Auth Card -->
+        <div class="card" id="authCard">
             <h1>👑 Admin Dashboard</h1>
             <p class="subtitle">Live Monitoring & Control Panel</p>
             
@@ -26,309 +323,575 @@
             </div>
         </div>
         
+        <!-- Dashboard Content -->
         <div id="dashboardContent" class="hidden">
             
-            <!-- Stats -->
-            <div class="stats-grid" id="statsGrid">
-                <div class="stat-card"><div class="stat-number" id="totalGroups">0</div><div class="stat-label">Total Groups</div></div>
-                <div class="stat-card"><div class="stat-number" id="checkedInJuries">0</div><div class="stat-label">Juries Checked In</div></div>
-                <div class="stat-card"><div class="stat-number" id="completedGroups">0</div><div class="stat-label">Groups Fully Marked</div></div>
-                <div class="stat-card"><div class="stat-number" id="partialGroups">0</div><div class="stat-label">Groups (1 Mark)</div></div>
+            <div class="swipe-hint">👈 Swipe left/right on tabs to navigate 👉</div>
+            
+            <!-- Tab Bar -->
+            <div class="tab-bar" id="tabBar">
+                <button class="tab active" data-tab="live">📊 LIVE</button>
+                <button class="tab" data-tab="eval">🎯 EVALUATION</button>
+                <button class="tab" data-tab="panel">👥 BY PANEL</button>
+                <button class="tab" data-tab="group">📋 BY GROUP</button>
+                <button class="tab" data-tab="rankings">🏆 RANKINGS</button>
+                <button class="tab" data-tab="admin">⚙️ ADMIN</button>
             </div>
             
-            <!-- CREATE JURY SECTION -->
-            <div class="card">
-                <h3>➕ Create New Jury (No Firebase Console Needed)</h3>
-                <div class="form-group">
-                    <label>Jury Name (temporary - can edit later)</label>
-                    <input type="text" id="newJuryName" placeholder="e.g., Panel 1, Panel 2, or Dr. Ahmad">
+            <!-- ======================================== -->
+            <!-- TAB 1: LIVE MONITORING -->
+            <!-- ======================================== -->
+            <div id="tab-live" class="tab-content active">
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-number" id="totalGroups">0</div><div class="stat-label">Total Groups</div></div>
+                    <div class="stat-card"><div class="stat-number" id="checkedInJuries">0</div><div class="stat-label">Juries Checked In</div></div>
+                    <div class="stat-card"><div class="stat-number" id="activeEvaluations">0</div><div class="stat-label">Active Evaluations</div></div>
+                    <div class="stat-card"><div class="stat-number" id="completedGroups">0</div><div class="stat-label">Groups Completed</div></div>
                 </div>
-                <div class="form-group">
-                    <label>Phone Number (for WhatsApp link)</label>
-                    <input type="text" id="newJuryPhone" placeholder="e.g., +60123456789">
+                
+                <div class="card">
+                    <h3>⚙️ System Status</h3>
+                    <div id="systemStatus">Loading...</div>
                 </div>
-                <div class="form-group">
-                    <label>Assign Groups</label>
-                    <select id="newJuryGroups" multiple size="6">
-                        <option value="">Loading groups...</option>
-                    </select>
-                    <small>Hold Ctrl (Windows) or Cmd (Mac) to select multiple groups</small>
-                </div>
-                <button id="createJuryBtn" class="btn btn-primary">🔑 Create Jury & Generate PIN</button>
-                <div id="createJuryResult" class="alert hidden" style="margin-top: 12px;"></div>
-            </div>
-            
-            <!-- Quick Actions -->
-            <div class="card">
-                <h3>⚡ Quick Actions</h3>
-                <div class="button-group">
-                    <button id="exportCsvBtn" class="btn btn-secondary">📊 Export CSV</button>
-                    <button id="refreshBtn" class="btn btn-secondary">🔄 Refresh Data</button>
-                    <button id="extendTimeBtn" class="btn btn-warning">⏰ Extend Time</button>
-                    <button id="toggleSystemBtn" class="btn btn-danger">🔒 Close System</button>
+                
+                <div class="card">
+                    <h3>⚠️ Quick Alerts</h3>
+                    <div id="quickAlerts">Loading...</div>
                 </div>
             </div>
             
-            <!-- System Status -->
-            <div class="card">
-                <h3>⚙️ System Status</h3>
-                <div id="systemStatus">Loading...</div>
+            <!-- ======================================== -->
+            <!-- TAB 2: EVALUATION STATUS -->
+            <!-- ======================================== -->
+            <div id="tab-eval" class="tab-content">
+                <div id="evalStatusContainer">Loading evaluation status...</div>
             </div>
             
-            <!-- Groups Ranking -->
-            <div class="card">
-                <h3>🏆 Group Rankings</h3>
-                <div class="table-container">
-                    <table id="rankingTable">
-                        <thead><tr><th>Rank</th><th>Group</th><th>Average</th><th>Juries</th><th>A1</th><th>A2</th><th>A3</th><th>A4</th><th>A5</th><th>Action</th></tr></thead>
-                        <tbody id="rankingTableBody"><tr><td colspan="10">Loading...</td></tr></tbody>
-                    </table>
+            <!-- ======================================== -->
+            <!-- TAB 3: BY PANEL -->
+            <!-- ======================================== -->
+            <div id="tab-panel" class="tab-content">
+                <div id="panelContainer">Loading panel data...</div>
+            </div>
+            
+            <!-- ======================================== -->
+            <!-- TAB 4: BY GROUP -->
+            <!-- ======================================== -->
+            <div id="tab-group" class="tab-content">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+                        <h3 style="margin: 0;">📋 Group Status</h3>
+                        <button id="exportGroupBtn" class="btn btn-secondary btn-sm">📊 Export CSV</button>
+                    </div>
+                    <div id="groupTableContainer">Loading group data...</div>
                 </div>
             </div>
             
-            <!-- JURY PROGRESS TABLE WITH EDIT BUTTON -->
-            <div class="card">
-                <h3>👥 Jury Progress</h3>
-                <div class="table-container">
-                    <table id="juryTable">
-                        <thead>
-                            <tr>
-                                <th>Jury Name</th>
-                                <th>PIN</th>
-                                <th>Phone</th>
-                                <th>Checked In</th>
-                                <th>Assigned</th>
-                                <th>Completed</th>
-                                <th>Progress</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="juryTableBody">
-                            <tr><td colspan="8">Loading...</td></tr>
-                        </tbody>
-                    </table>
+            <!-- ======================================== -->
+            <!-- TAB 5: RANKINGS -->
+            <!-- ======================================== -->
+            <div id="tab-rankings" class="tab-content">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+                        <h3 style="margin: 0;">🏆 Group Rankings</h3>
+                        <button id="exportRankingsBtn" class="btn btn-secondary btn-sm">📊 Export CSV</button>
+                    </div>
+                    <div class="sticky-table-container" style="max-height: 60vh; overflow-y: auto;">
+                        <table class="status-table">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th><th>Group</th><th>Average</th><th>Juries</th><th>A1</th><th>A2</th><th>A3</th><th>A4</th><th>A5</th><th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rankingTableBody"><tr><td colspan="10">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             
-            <!-- Reassign Groups to Existing Jury -->
-            <div class="card">
-                <h3>📋 Reassign Groups to Existing Jury</h3>
-                <div class="form-group">
-                    <label>Select Jury</label>
-                    <select id="assignJurySelect"><option>Loading juries...</option></select>
+            <!-- ======================================== -->
+            <!-- TAB 6: ADMIN -->
+            <!-- ======================================== -->
+            <div id="tab-admin" class="tab-content">
+                <div class="card">
+                    <h3>⚡ Quick Actions</h3>
+                    <div class="button-group">
+                        <button id="extendTimeBtn" class="btn btn-warning">⏰ Extend Time</button>
+                        <button id="toggleSystemBtn" class="btn btn-danger">🔒 Close System</button>
+                        <button id="refreshDataBtn" class="btn btn-secondary">🔄 Refresh Data</button>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Assign Groups</label>
-                    <select id="assignGroupsSelect" multiple size="5"></select>
+                
+                <div class="card">
+                    <h3>👥 Manage Juries</h3>
+                    <div class="form-group">
+                        <label>Create New Jury</label>
+                        <input type="text" id="newJuryName" placeholder="Jury Name">
+                        <input type="text" id="newJuryPhone" placeholder="Phone Number" style="margin-top: 8px;">
+                        <select id="newJuryGroups" multiple size="4" style="margin-top: 8px;"></select>
+                        <button id="createJuryBtn" class="btn btn-primary" style="margin-top: 12px;">Create Jury</button>
+                    </div>
+                    <div id="createJuryResult" class="alert hidden"></div>
                 </div>
-                <button id="assignGroupsBtn" class="btn btn-primary">Save Assignment</button>
-            </div>
-            
-            <!-- Audit Logs -->
-            <div class="card">
-                <h3>📜 Audit Logs</h3>
-                <div class="table-container">
-                    <table id="auditTable">
-                        <thead><tr><th>Time</th><th>Action</th><th>Target</th><th>Details</th></tr></thead>
-                        <tbody id="auditTableBody"><tr><td colspan="4">Loading...</td></tr></tbody>
-                    </table>
+                
+                <div class="card">
+                    <h3>📜 Audit Logs</h3>
+                    <div class="table-container">
+                        <table class="status-table">
+                            <thead><tr><th>Time</th><th>Action</th><th>Target</th><th>Details</th></tr></thead>
+                            <tbody id="auditTableBody"><tr><td colspan="4">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     
     <!-- Modals -->
-    <div id="overrideModal" class="modal"><div class="modal-content"><div class="modal-header">Override Group Score</div><div class="form-group"><label>Group Number</label><input type="number" id="overrideGroupNumber" readonly></div><div class="form-group"><label>New Score (0-100)</label><input type="number" id="overrideNewScore" min="0" max="100" step="0.1"></div><div class="form-group"><label>Reason</label><textarea id="overrideReason" rows="3"></textarea></div><div class="modal-footer"><button id="cancelOverrideBtn" class="btn btn-secondary">Cancel</button><button id="confirmOverrideBtn" class="btn btn-danger">Confirm</button></div></div></div>
+    <div id="overrideModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Override Group Score</div>
+            <div class="form-group"><label>Group Number</label><input type="number" id="overrideGroupNumber" readonly></div>
+            <div class="form-group"><label>New Score (0-100)</label><input type="number" id="overrideNewScore" min="0" max="100" step="0.1"></div>
+            <div class="form-group"><label>Reason</label><textarea id="overrideReason" rows="3"></textarea></div>
+            <div class="modal-footer"><button id="cancelOverrideBtn">Cancel</button><button id="confirmOverrideBtn">Confirm</button></div>
+        </div>
+    </div>
     
-    <div id="extendTimeModal" class="modal"><div class="modal-content"><div class="modal-header">Extend Judging Time</div><div class="form-group"><label>New End Date & Time</label><input type="datetime-local" id="newEndTime"></div><div class="modal-footer"><button id="cancelExtendBtn" class="btn btn-secondary">Cancel</button><button id="confirmExtendBtn" class="btn btn-primary">Extend</button></div></div></div>
+    <div id="extendTimeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Extend Judging Time</div>
+            <div class="form-group"><label>New End Date & Time</label><input type="datetime-local" id="newEndTime"></div>
+            <div class="modal-footer"><button id="cancelExtendBtn">Cancel</button><button id="confirmExtendBtn">Extend</button></div>
+        </div>
+    </div>
 
     <script type="module">
         import { db } from './firebase-config.js';
-        import { collection, doc, getDoc, getDocs, addDoc, updateDoc, query, where, orderBy, limit, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { authenticateAdmin, isAdminAuthenticated, getAllGroups, getAllScores, getAllJuries, calculateGroupAverages, updateGroupRanks, assignGroupsToJury, overrideGroupScore, extendJudgingTime, setJudgingOpen, exportToCSV, initDarkMode } from './app.js';
+        import { collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, Timestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { authenticateAdmin, isAdminAuthenticated, getAllGroups, getAllScores, getAllJuries, calculateGroupAverages, updateGroupRanks, overrideGroupScore, extendJudgingTime, setJudgingOpen, exportToCSV, initDarkMode } from './app.js';
         
         initDarkMode();
         
         let currentGroups = [];
         let currentJuries = [];
+        let evaluationStatuses = [];
+        let touchStartX = 0, touchEndX = 0;
         
         // Auth
-        function checkAuth() { if (isAdminAuthenticated()) { document.getElementById('authSection').classList.add('hidden'); document.getElementById('dashboardContent').classList.remove('hidden'); loadAllData(); startAutoRefresh(); } }
+        function checkAuth() { 
+            if (isAdminAuthenticated()) { 
+                document.getElementById('authCard').style.display = 'none';
+                document.getElementById('dashboardContent').classList.remove('hidden'); 
+                loadAllData(); 
+                startAutoRefresh(); 
+            } 
+        }
         
         document.getElementById('authBtn').addEventListener('click', () => {
             if (authenticateAdmin(document.getElementById('adminPassword').value)) { checkAuth(); } 
             else { document.getElementById('authError').innerText = 'Wrong password'; document.getElementById('authError').classList.remove('hidden'); }
         });
         
-        async function loadAllData() { await loadSystemStatus(); await loadGroupsAndRankings(); await loadJuryProgress(); await loadAuditLogs(); await loadAssignDropdowns(); await loadGroupOptions(); }
+        // Tab Switching
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        function switchTab(tabId) {
+            tabContents.forEach(content => content.classList.remove('active'));
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            tabs.forEach(tab => {
+                if (tab.dataset.tab === tabId) tab.classList.add('active');
+                else tab.classList.remove('active');
+            });
+        }
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+        });
+        
+        // Swipe support
+        const tabBar = document.getElementById('tabBar');
+        tabBar.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; });
+        tabBar.addEventListener('touchend', (e) => { 
+            touchEndX = e.changedTouches[0].screenX;
+            const currentIndex = Array.from(tabs).findIndex(t => t.classList.contains('active'));
+            if (touchStartX - touchEndX > 50 && currentIndex < tabs.length - 1) {
+                switchTab(tabs[currentIndex + 1].dataset.tab);
+            } else if (touchEndX - touchStartX > 50 && currentIndex > 0) {
+                switchTab(tabs[currentIndex - 1].dataset.tab);
+            }
+        });
+        
+        async function loadAllData() { 
+            await loadSystemStatus();
+            await loadEvaluationStatus();
+            await loadPanelView();
+            await loadGroupView();
+            await loadRankings();
+            await loadQuickAlerts();
+            await loadJuryOptions();
+        }
         
         async function loadSystemStatus() {
-            const settingsRef = doc(db, 'settings', 'current');
-            const settingsDoc = await getDoc(settingsRef);
-            if (settingsDoc.exists()) {
-                const settings = settingsDoc.data();
-                document.getElementById('systemStatus').innerHTML = `<p><strong>Status:</strong> ${settings.isOpen ? '🟢 OPEN' : '🔴 CLOSED'} | <strong>Ends:</strong> ${settings.judgingEndTime?.toDate().toLocaleString() || 'Not set'}</p>`;
-                document.getElementById('toggleSystemBtn').innerText = settings.isOpen ? '🔒 Close System' : '🔓 Open System';
-            }
-        }
-        
-        async function loadGroupsAndRankings() {
-            currentGroups = await calculateGroupAverages();
-            await updateGroupRanks();
-            document.getElementById('totalGroups').innerText = currentGroups.length;
-            document.getElementById('completedGroups').innerText = currentGroups.filter(g => g.juryCount >= 2).length;
-            document.getElementById('partialGroups').innerText = currentGroups.filter(g => g.juryCount === 1).length;
-            const tbody = document.getElementById('rankingTableBody');
-            tbody.innerHTML = currentGroups.map(g => `<tr><td>${g.rank}</td><td><strong>Group ${g.groupNumber}</strong></td><td>${g.finalAverage.toFixed(2)}</td><td>${g.juryCount||0}</td><td>${g.a1_avg?.toFixed(2)||0}</td><td>${g.a2_avg?.toFixed(2)||0}</td><td>${g.a3_avg?.toFixed(2)||0}</td><td>${g.a4_avg?.toFixed(2)||0}</td><td>${g.a5_avg?.toFixed(2)||0}</td><td><button class="btn btn-sm btn-warning" onclick="window.showOverrideModal(${g.groupNumber}, ${g.finalAverage})">Override</button></td></tr>`).join('');
-        }
-        
-        async function loadJuryProgress() {
-            currentJuries = await getAllJuries();
-            document.getElementById('checkedInJuries').innerText = currentJuries.filter(j => j.checkedIn).length;
-            const tbody = document.getElementById('juryTableBody');
-            tbody.innerHTML = currentJuries.map(jury => `
-                <tr>
-                    <td>${jury.name || 'Unnamed'}</td>
-                    <td><code>${jury.pin}</code></td>
-                    <td>${jury.phone || '-'}</td>
-                    <td>${jury.checkedIn ? '✅' : '❌'}</td>
-                    <td>${jury.assignedGroups?.length||0}</td>
-                    <td>${jury.completedGroups?.length||0}</td>
-                    <td><div class="progress-bar"><div class="progress-fill" style="width: ${(jury.completedGroups?.length||0)/(jury.assignedGroups?.length||1)*100}%"></div></div></td>
-                    <td>
-                        <button class="btn btn-sm btn-secondary" onclick="window.viewJuryGroups('${jury.id}')">View</button>
-                        <button class="btn btn-sm btn-primary" onclick="window.editJuryName('${jury.id}', '${(jury.name || '').replace(/'/g, "\\'")}')" style="margin-left: 5px;">✏️ Edit</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-        
-        // EDIT JURY NAME FUNCTION
-        window.editJuryName = async (juryId, currentName) => {
-            const newName = prompt('Enter new jury name:', currentName);
-            if (newName && newName.trim()) {
-                try {
-                    const juryRef = doc(db, 'juries', juryId);
-                    await updateDoc(juryRef, { name: newName.trim() });
-                    alert('✅ Name updated successfully!');
-                    loadJuryProgress();
-                } catch (error) {
-                    alert('❌ Error: ' + error.message);
+            try {
+                const settingsRef = doc(db, 'settings', 'current');
+                const settingsDoc = await getDoc(settingsRef);
+                if (settingsDoc.exists()) {
+                    const settings = settingsDoc.data();
+                    document.getElementById('systemStatus').innerHTML = `
+                        <p><strong>Status:</strong> ${settings.isOpen ? '🟢 OPEN' : '🔴 CLOSED'} | <strong>Ends:</strong> ${settings.judgingEndTime?.toDate().toLocaleString() || 'Not set'}</p>
+                    `;
+                    document.getElementById('toggleSystemBtn').innerText = settings.isOpen ? '🔒 Close System' : '🔓 Open System';
                 }
+            } catch (error) {
+                document.getElementById('systemStatus').innerHTML = '<p>❌ Error loading status</p>';
             }
-        };
-        
-        window.viewJuryGroups = (juryId) => {
-            const jury = currentJuries.find(j => j.id === juryId);
-            alert(`Jury: ${jury.name || 'Unnamed'}\nPIN: ${jury.pin}\nAssigned: ${jury.assignedGroups?.join(', ') || 'None'}\nCompleted: ${jury.completedGroups?.join(', ') || 'None'}`);
-        };
-        
-        async function loadAuditLogs() {
-            const auditRef = collection(db, 'audit_logs');
-            const q = query(auditRef, orderBy('timestamp', 'desc'), limit(30));
-            const snapshot = await getDocs(q);
-            const tbody = document.getElementById('auditTableBody');
-            tbody.innerHTML = '';
-            snapshot.forEach(doc => { const log = doc.data(); tbody.innerHTML += `<tr><td>${log.timestamp?.toDate().toLocaleString()}</td><td>${log.action}</td><td>${log.targetType}</td><td>${log.reason || '-'}</td></tr>`; });
         }
         
-        async function loadAssignDropdowns() {
+        async function loadEvaluationStatus() {
+            try {
+                const evalRef = collection(db, 'evaluation_status');
+                const evalSnapshot = await getDocs(evalRef);
+                const statuses = [];
+                evalSnapshot.forEach(doc => statuses.push({ id: doc.id, ...doc.data() }));
+                evaluationStatuses = statuses;
+                
+                // Get all groups and juries
+                const groups = await getAllGroups();
+                const juries = await getAllJuries();
+                
+                const activeList = [];
+                const notStartedList = [];
+                const completedList = [];
+                
+                for (const group of groups) {
+                    const groupStatuses = statuses.filter(s => s.groupNumber === group.number);
+                    const activeEval = groupStatuses.find(s => s.status === 'active');
+                    const completedEval = groupStatuses.filter(s => s.status === 'completed');
+                    
+                    if (activeEval) {
+                        const jury = juries.find(j => j.pin === activeEval.juryPin);
+                        activeList.push({
+                            groupNumber: group.number,
+                            projectTitle: group.projectTitle || '-',
+                            juryName: jury?.name || activeEval.juryName,
+                            startedAt: activeEval.startedAt
+                        });
+                    } else if (completedEval.length > 0) {
+                        completedList.push({
+                            groupNumber: group.number,
+                            projectTitle: group.projectTitle || '-',
+                            juriesDone: completedEval.length,
+                            totalJuries: group.assignedJuriesCount || 1
+                        });
+                    } else {
+                        notStartedList.push({
+                            groupNumber: group.number,
+                            projectTitle: group.projectTitle || '-'
+                        });
+                    }
+                }
+                
+                document.getElementById('evalStatusContainer').innerHTML = `
+                    <div class="card">
+                        <div class="section-header section-active">🟡 ACTIVE (Being evaluated NOW)</div>
+                        ${activeList.length === 0 ? '<p>No active evaluations</p>' : `
+                            <table class="status-table">
+                                <thead><tr><th>Group</th><th>Project</th><th>Jury</th></tr></thead>
+                                <tbody>${activeList.map(g => `<tr><td><strong>Group ${g.groupNumber}</strong></td><td>${g.projectTitle}</td><td>${g.juryName}</td></tr>`).join('')}</tbody>
+                            </table>
+                        `}
+                    </div>
+                    <div class="card">
+                        <div class="section-header section-wait">⚪ NOT STARTED</div>
+                        ${notStartedList.length === 0 ? '<p>All groups have started evaluation</p>' : `
+                            <table class="status-table">
+                                <thead><tr><th>Group</th><th>Project</th></tr></thead>
+                                <tbody>${notStartedList.map(g => `<tr><td><strong>Group ${g.groupNumber}</strong></td><td>${g.projectTitle}</td></tr>`).join('')}</tbody>
+                            </table>
+                        `}
+                    </div>
+                    <div class="card">
+                        <div class="section-header section-completed">✅ COMPLETED</div>
+                        ${completedList.length === 0 ? '<p>No groups completed yet</p>' : `
+                            <table class="status-table">
+                                <thead><tr><th>Group</th><th>Project</th><th>Progress</th></tr></thead>
+                                <tbody>${completedList.map(g => `<tr><td><strong>Group ${g.groupNumber}</strong></td><td>${g.projectTitle}</td><td>${g.juriesDone}/${g.totalJuries} juries</td></tr>`).join('')}</tbody>
+                            </table>
+                        `}
+                    </div>
+                `;
+                
+                document.getElementById('activeEvaluations').innerText = activeList.length;
+                
+            } catch (error) {
+                console.error('Error loading evaluation status:', error);
+                document.getElementById('evalStatusContainer').innerHTML = '<div class="card"><p>❌ Error loading data</p></div>';
+            }
+        }
+        
+        async function loadPanelView() {
             const juries = await getAllJuries();
-            const select = document.getElementById('assignJurySelect');
-            select.innerHTML = '<option value="">Select Jury</option>' + juries.map(j => `<option value="${j.id}">${j.name || 'Unnamed'} (${j.pin})</option>`).join('');
-            const groups = await getAllGroups();
-            const groupSelect = document.getElementById('assignGroupsSelect');
-            groupSelect.innerHTML = groups.map(g => `<option value="${g.number}">Group ${g.number}</option>`).join('');
+            const statuses = evaluationStatuses;
+            
+            let html = '';
+            for (const jury of juries) {
+                const assignedGroups = jury.assignedGroups || [];
+                const completedGroups = jury.completedGroups || [];
+                
+                let groupStatusHtml = '';
+                for (const groupNum of assignedGroups) {
+                    const status = statuses.find(s => s.juryPin === jury.pin && s.groupNumber === groupNum);
+                    let statusIcon = '🔴';
+                    if (completedGroups.includes(groupNum)) statusIcon = '✅';
+                    else if (status?.status === 'active') statusIcon = '🟡';
+                    else if (status?.status === 'completed') statusIcon = '✅';
+                    
+                    groupStatusHtml += `<span class="group-status-item">${statusIcon} Group ${groupNum}</span>`;
+                }
+                
+                const completedCount = completedGroups.length;
+                const percent = assignedGroups.length ? (completedCount / assignedGroups.length * 100).toFixed(0) : 0;
+                
+                html += `
+                    <div class="panel-row">
+                        <div class="panel-header" onclick="this.nextElementSibling.classList.toggle('expanded')">
+                            <div>
+                                <span class="panel-name">${jury.name || 'Unnamed'}</span>
+                                <span class="panel-stats"> (${jury.pin})</span>
+                            </div>
+                            <div>
+                                <span>${completedCount}/${assignedGroups.length} completed</span>
+                                <div class="progress-bar-small"><div class="progress-fill-small" style="width: ${percent}%"></div></div>
+                            </div>
+                        </div>
+                        <div class="panel-content">
+                            <div class="group-status-grid">${groupStatusHtml}</div>
+                            <div style="margin-top: 12px; font-size: 12px; color: var(--text-secondary);">
+                                Checked In: ${jury.checkedIn ? '✅ Yes' : '❌ No'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('panelContainer').innerHTML = html || '<div class="card"><p>No juries created yet</p></div>';
         }
         
-        async function loadGroupOptions() {
+        async function loadGroupView() {
+            const groups = await getAllGroups();
+            const juries = await getAllJuries();
+            const statuses = evaluationStatuses;
+            const scores = await getAllScores();
+            
+            let html = '<div class="table-container"><table class="status-table"><thead><tr><th>Group</th><th>Project</th><th>Assigned Juries</th><th>Status</th><th>Scores</th></tr></thead><tbody>';
+            
+            for (const group of groups) {
+                const assignedJuries = juries.filter(j => j.assignedGroups?.includes(group.number));
+                const groupStatuses = statuses.filter(s => s.groupNumber === group.number);
+                const groupScores = scores.filter(s => s.groupNumber === group.number);
+                
+                let assignedHtml = '';
+                let statusHtml = '';
+                let scoresHtml = '';
+                
+                for (const jury of assignedJuries) {
+                    const status = groupStatuses.find(s => s.juryPin === jury.pin);
+                    const score = groupScores.find(s => s.juryPin === jury.pin);
+                    let icon = '🔴';
+                    if (jury.completedGroups?.includes(group.number)) icon = '✅';
+                    else if (status?.status === 'active') icon = '🟡';
+                    
+                    assignedHtml += `<div>${icon} ${jury.name || jury.pin}</div>`;
+                    if (score) scoresHtml += `<div>${jury.name}: ${score.total}/100</div>`;
+                }
+                
+                const allCompleted = assignedJuries.every(j => j.completedGroups?.includes(group.number));
+                statusHtml = allCompleted ? '✅ All done' : assignedJuries.some(j => j.completedGroups?.includes(group.number)) ? '🟡 Partial' : '⚪ Not started';
+                
+                html += `<tr>
+                    <td><strong>Group ${group.number}</strong></td>
+                    <td>${group.projectTitle || '-'}</td>
+                    <td>${assignedHtml}</td>
+                    <td>${statusHtml}</td>
+                    <td>${scoresHtml || '-'}</td>
+                </tr>`;
+            }
+            
+            html += '</tbody></table></div>';
+            document.getElementById('groupTableContainer').innerHTML = html;
+        }
+        
+        async function loadRankings() {
+            const averages = await calculateGroupAverages();
+            await updateGroupRanks();
+            const tbody = document.getElementById('rankingTableBody');
+            if (averages.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10">No scores yet</td></tr>';
+            } else {
+                tbody.innerHTML = averages.map(g => `
+                    <tr>
+                        <td>${g.rank}</td>
+                        <td><strong>Group ${g.groupNumber}</strong></td>
+                        <td>${g.finalAverage.toFixed(2)}</td>
+                        <td>${g.juryCount || 0}</td>
+                        <td>${g.a1_avg?.toFixed(2) || 0}</td>
+                        <td>${g.a2_avg?.toFixed(2) || 0}</td>
+                        <td>${g.a3_avg?.toFixed(2) || 0}</td>
+                        <td>${g.a4_avg?.toFixed(2) || 0}</td>
+                        <td>${g.a5_avg?.toFixed(2) || 0}</td>
+                        <td><button class="btn btn-sm btn-warning" onclick="window.showOverrideModal(${g.groupNumber}, ${g.finalAverage})">Override</button></td>
+                    </tr>
+                `).join('');
+            }
+        }
+        
+        async function loadQuickAlerts() {
+            const groups = await getAllGroups();
+            const statuses = evaluationStatuses;
+            
+            const notStartedGroups = [];
+            const activeGroups = [];
+            
+            for (const group of groups) {
+                const hasActive = statuses.some(s => s.groupNumber === group.number && s.status === 'active');
+                const hasAny = statuses.some(s => s.groupNumber === group.number);
+                
+                if (hasActive) activeGroups.push(group.number);
+                else if (!hasAny) notStartedGroups.push(group.number);
+            }
+            
+            document.getElementById('quickAlerts').innerHTML = `
+                <div class="attention-item attention-zero">
+                    <strong>🔴 Not started:</strong> ${notStartedGroups.length > 0 ? notStartedGroups.join(', ') : 'None ✅'}
+                </div>
+                <div class="attention-item attention-one">
+                    <strong>🟡 Active now:</strong> ${activeGroups.length > 0 ? activeGroups.join(', ') : 'None'}
+                </div>
+            `;
+        }
+        
+        async function loadJuryOptions() {
             const groups = await getAllGroups();
             const select = document.getElementById('newJuryGroups');
-            select.innerHTML = groups.map(g => `<option value="${g.number}">Group ${g.number}</option>`).join('');
+            select.innerHTML = groups.map(g => `<option value="${g.number}">Group ${g.number} - ${g.projectTitle || ''}</option>`).join('');
         }
         
-        // Generate PIN
         function generatePIN() {
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
             let pin = '';
-            for (let i = 0; i < 8; i++) {
-                pin += chars[Math.floor(Math.random() * chars.length)];
-            }
+            for (let i = 0; i < 8; i++) pin += chars[Math.floor(Math.random() * chars.length)];
             return pin;
         }
         
-        // Create Jury
         document.getElementById('createJuryBtn').addEventListener('click', async () => {
             const name = document.getElementById('newJuryName').value.trim();
             const phone = document.getElementById('newJuryPhone').value.trim();
-            const selectedOptions = document.getElementById('newJuryGroups').selectedOptions;
-            const assignedGroups = Array.from(selectedOptions).map(opt => parseInt(opt.value));
+            const selected = Array.from(document.getElementById('newJuryGroups').selectedOptions).map(opt => parseInt(opt.value));
             
-            if (!name) { alert('Please enter jury name'); return; }
-            if (assignedGroups.length === 0) { alert('Please assign at least one group'); return; }
+            if (!name) { alert('Enter jury name'); return; }
+            if (selected.length === 0) { alert('Select at least one group'); return; }
             
             const pin = generatePIN();
             const resultDiv = document.getElementById('createJuryResult');
             
             try {
                 await addDoc(collection(db, 'juries'), {
-                    pin: pin,
-                    name: name,
-                    phone: phone,
-                    assignedGroups: assignedGroups,
-                    checkedIn: false,
-                    completedGroups: [],
-                    createdAt: Timestamp.now()
+                    pin, name, phone, assignedGroups: selected, checkedIn: false, completedGroups: [], createdAt: Timestamp.now()
                 });
-                
                 const juryUrl = `${window.location.origin}${window.location.pathname.replace('admin.html', 'jury.html')}`;
-                const whatsappLink = `https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(name)}%2C%0A%0AYour%20Exhibition%20Judging%20System%20PIN%20is%3A%20*${pin}*%0A%0AClick%20here%20to%20login%3A%0A${encodeURIComponent(juryUrl)}%0A%0AThank%20you%20for%20being%20our%20industry%20panelist.`;
-                
+                const whatsappLink = `https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(name)}%2C%0AYour%20PIN%3A%20*${pin}*%0ALogin%3A%20${encodeURIComponent(juryUrl)}`;
                 resultDiv.className = 'alert alert-success';
-                resultDiv.innerHTML = `✅ Jury created!<br><strong>PIN:</strong> ${pin}<br><strong>Name:</strong> ${name}<br><strong>Groups:</strong> ${assignedGroups.join(', ')}<br><br><a href="${whatsappLink}" target="_blank" class="btn btn-success" style="display:inline-block; margin-top:8px;">📱 Send via WhatsApp</a>`;
-                resultDiv.classList.remove('hidden');
-                
+                resultDiv.innerHTML = `✅ Jury created! PIN: ${pin}<br><a href="${whatsappLink}" target="_blank">📱 Send WhatsApp</a>`;
                 document.getElementById('newJuryName').value = '';
                 document.getElementById('newJuryPhone').value = '';
-                document.getElementById('newJuryGroups').selectedIndex = -1;
-                
-                await loadJuryProgress();
-                await loadAssignDropdowns();
-                
+                loadAllData();
             } catch (error) {
                 resultDiv.className = 'alert alert-error';
                 resultDiv.innerHTML = `❌ Error: ${error.message}`;
-                resultDiv.classList.remove('hidden');
             }
         });
         
-        document.getElementById('assignGroupsBtn').addEventListener('click', async () => {
-            const juryId = document.getElementById('assignJurySelect').value;
-            const selected = Array.from(document.getElementById('assignGroupsSelect').selectedOptions).map(opt => parseInt(opt.value));
-            if (!juryId) { alert('Select jury'); return; }
-            const result = await assignGroupsToJury(juryId, selected);
-            alert(result.success ? 'Groups assigned!' : 'Error: ' + result.error);
-            if (result.success) { loadJuryProgress(); }
+        document.getElementById('exportGroupBtn').addEventListener('click', async () => {
+            const groups = await getAllGroups();
+            const juries = await getAllJuries();
+            const statuses = evaluationStatuses;
+            const csvRows = [['Group', 'Project', 'Assigned Juries', 'Status', 'Scores']];
+            for (const group of groups) {
+                const assigned = juries.filter(j => j.assignedGroups?.includes(group.number)).map(j => j.name).join(',');
+                const hasActive = statuses.some(s => s.groupNumber === group.number && s.status === 'active');
+                const status = hasActive ? 'Active' : 'Not Started';
+                csvRows.push([group.number, group.projectTitle || '', assigned, status, '']);
+            }
+            const csv = csvRows.map(row => row.join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `group_status_${new Date().toISOString()}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
         });
         
-        document.getElementById('exportCsvBtn').addEventListener('click', async () => { const groups = await calculateGroupAverages(); exportToCSV(groups, []); });
-        document.getElementById('refreshBtn').addEventListener('click', () => loadAllData());
-        document.getElementById('extendTimeBtn').addEventListener('click', () => document.getElementById('extendTimeModal').style.display = 'flex');
-        document.getElementById('toggleSystemBtn').addEventListener('click', async () => { const settingsRef = doc(db, 'settings', 'current'); const docSnap = await getDoc(settingsRef); const newState = !docSnap.data()?.isOpen; await setJudgingOpen(newState, 'Admin'); loadAllData(); });
+        document.getElementById('exportRankingsBtn').addEventListener('click', async () => {
+            const averages = await calculateGroupAverages();
+            exportToCSV(averages, []);
+        });
         
-        document.getElementById('confirmExtendBtn').addEventListener('click', async () => { const newTime = Timestamp.fromDate(new Date(document.getElementById('newEndTime').value)); await extendJudgingTime(newTime, 'Admin'); document.getElementById('extendTimeModal').style.display = 'none'; loadAllData(); });
+        document.getElementById('refreshDataBtn').addEventListener('click', () => loadAllData());
+        document.getElementById('extendTimeBtn').addEventListener('click', () => document.getElementById('extendTimeModal').style.display = 'flex');
+        document.getElementById('toggleSystemBtn').addEventListener('click', async () => {
+            const settingsRef = doc(db, 'settings', 'current');
+            const docSnap = await getDoc(settingsRef);
+            await setJudgingOpen(!docSnap.data()?.isOpen, 'Admin');
+            loadAllData();
+        });
+        
+        document.getElementById('confirmExtendBtn').addEventListener('click', async () => {
+            const newTime = Timestamp.fromDate(new Date(document.getElementById('newEndTime').value));
+            await extendJudgingTime(newTime, 'Admin');
+            document.getElementById('extendTimeModal').style.display = 'none';
+            loadAllData();
+        });
         document.getElementById('cancelExtendBtn').addEventListener('click', () => document.getElementById('extendTimeModal').style.display = 'none');
         document.getElementById('cancelOverrideBtn').addEventListener('click', () => document.getElementById('overrideModal').style.display = 'none');
-        document.getElementById('confirmOverrideBtn').addEventListener('click', async () => { const groupNum = parseInt(document.getElementById('overrideGroupNumber').value); const newScore = parseFloat(document.getElementById('overrideNewScore').value); const reason = document.getElementById('overrideReason').value; if (!reason) { alert('Provide reason'); return; } await overrideGroupScore(groupNum, newScore, reason, 'Admin'); document.getElementById('overrideModal').style.display = 'none'; loadGroupsAndRankings(); loadAuditLogs(); });
+        document.getElementById('confirmOverrideBtn').addEventListener('click', async () => {
+            const groupNum = parseInt(document.getElementById('overrideGroupNumber').value);
+            const newScore = parseFloat(document.getElementById('overrideNewScore').value);
+            const reason = document.getElementById('overrideReason').value;
+            if (!reason) { alert('Provide reason'); return; }
+            await overrideGroupScore(groupNum, newScore, reason, 'Admin');
+            document.getElementById('overrideModal').style.display = 'none';
+            loadRankings();
+        });
         
-        window.showOverrideModal = (groupNum, current) => { document.getElementById('overrideGroupNumber').value = groupNum; document.getElementById('overrideNewScore').value = current; document.getElementById('overrideReason').value = ''; document.getElementById('overrideModal').style.display = 'flex'; };
+        window.showOverrideModal = (groupNum, current) => {
+            document.getElementById('overrideGroupNumber').value = groupNum;
+            document.getElementById('overrideNewScore').value = current;
+            document.getElementById('overrideReason').value = '';
+            document.getElementById('overrideModal').style.display = 'flex';
+        };
         
-        let refreshInterval; function startAutoRefresh() { if (refreshInterval) clearInterval(refreshInterval); refreshInterval = setInterval(() => { if (isAdminAuthenticated()) { loadGroupsAndRankings(); loadJuryProgress(); } }, 10000); }
+        let refreshInterval;
+        function startAutoRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(() => {
+                if (isAdminAuthenticated()) {
+                    loadEvaluationStatus();
+                    loadPanelView();
+                    loadQuickAlerts();
+                }
+            }, 10000);
+        }
         
-        window.onclick = (event) => { if (event.target === document.getElementById('overrideModal')) document.getElementById('overrideModal').style.display = 'none'; if (event.target === document.getElementById('extendTimeModal')) document.getElementById('extendTimeModal').style.display = 'none'; };
-        
-        function updateToggleIcon() { const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; document.getElementById('darkModeToggle').textContent = isDark ? '☀️' : '🌙'; }
-        const observer = new MutationObserver(updateToggleIcon); observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] }); updateToggleIcon();
+        function updateToggleIcon() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            document.getElementById('darkModeToggle').textContent = isDark ? '☀️' : '🌙';
+        }
+        const observer = new MutationObserver(updateToggleIcon);
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+        updateToggleIcon();
         
         checkAuth();
     </script>

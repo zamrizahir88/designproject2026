@@ -59,6 +59,88 @@ export function formatTimestamp(timestamp) {
 }
 
 // ========================================
+// EVALUATION STATUS FUNCTIONS (NEW)
+// ========================================
+
+// Update evaluation status for a jury-group pair
+export async function updateEvaluationStatus(juryPin, juryName, groupNumber, status, startedAt = null) {
+  try {
+    const statusRef = doc(db, 'evaluation_status', `${juryPin}_${groupNumber}`);
+    const statusData = {
+      juryPin: juryPin,
+      juryName: juryName,
+      groupNumber: groupNumber,
+      status: status, // 'active', 'completed', 'not_started'
+      updatedAt: Timestamp.now()
+    };
+    
+    if (startedAt) {
+      statusData.startedAt = startedAt;
+    } else if (status === 'active') {
+      statusData.startedAt = Timestamp.now();
+    }
+    
+    if (status === 'completed') {
+      statusData.completedAt = Timestamp.now();
+    }
+    
+    await setDoc(statusRef, statusData, { merge: true });
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating evaluation status:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Get evaluation status for a specific jury-group
+export async function getEvaluationStatus(juryPin, groupNumber) {
+  try {
+    const statusRef = doc(db, 'evaluation_status', `${juryPin}_${groupNumber}`);
+    const statusDoc = await getDoc(statusRef);
+    if (statusDoc.exists()) {
+      return statusDoc.data().status;
+    }
+    return 'not_started';
+  } catch (error) {
+    console.error('Error getting evaluation status:', error);
+    return 'not_started';
+  }
+}
+
+// Get all evaluation statuses (for admin dashboard)
+export async function getAllEvaluationStatuses() {
+  try {
+    const statusRef = collection(db, 'evaluation_status');
+    const statusSnapshot = await getDocs(statusRef);
+    const statuses = [];
+    statusSnapshot.forEach(doc => {
+      statuses.push({ id: doc.id, ...doc.data() });
+    });
+    return statuses;
+  } catch (error) {
+    console.error('Error getting evaluation statuses:', error);
+    return [];
+  }
+}
+
+// Get active evaluations (groups being evaluated right now)
+export async function getActiveEvaluations() {
+  try {
+    const statusRef = collection(db, 'evaluation_status');
+    const q = query(statusRef, where('status', '==', 'active'));
+    const statusSnapshot = await getDocs(q);
+    const active = [];
+    statusSnapshot.forEach(doc => {
+      active.push({ id: doc.id, ...doc.data() });
+    });
+    return active;
+  } catch (error) {
+    console.error('Error getting active evaluations:', error);
+    return [];
+  }
+}
+
+// ========================================
 // JURY FUNCTIONS
 // ========================================
 
@@ -126,52 +208,95 @@ export async function juryCheckIn(juryId, juryName) {
   }
 }
 
-// Get jury's assigned groups with their scores
+// Get jury's assigned groups with their scores and evaluation status
 export async function getJuryAssignedGroups(juryId, juryData) {
-    const assignedGroups = juryData.assignedGroups || [];
-    const completedGroups = juryData.completedGroups || [];
+  const assignedGroups = juryData.assignedGroups || [];
+  const completedGroups = juryData.completedGroups || [];
+  const juryPin = juryData.pin;
+  
+  const groupsData = [];
+  
+  for (const groupNum of assignedGroups) {
+    // Fetch group details from groups collection
+    const groupRef = doc(db, 'groups', groupNum.toString());
+    const groupDoc = await getDoc(groupRef);
+    const groupDetails = groupDoc.exists() ? groupDoc.data() : {};
     
-    const groupsData = [];
+    // Get evaluation status
+    const evalStatus = await getEvaluationStatus(juryPin, groupNum);
     
-    for (const groupNum of assignedGroups) {
-        // Fetch group details from groups collection
-        const groupRef = doc(db, 'groups', groupNum.toString());
-        const groupDoc = await getDoc(groupRef);
-        const groupDetails = groupDoc.exists() ? groupDoc.data() : {};
-        
-        // Get existing final score for this jury-group
-        const scoresRef = collection(db, 'scores');
-        const q = query(
-            scoresRef, 
-            where('juryPin', '==', juryData.pin),
-            where('groupNumber', '==', groupNum),
-            where('isFinal', '==', true)
-        );
-        const scoreSnapshot = await getDocs(q);
-        
-        let existingScore = null;
-        let existingRawScores = null;
-        
-        if (!scoreSnapshot.empty) {
-            const scoreDoc = scoreSnapshot.docs[0];
-            existingScore = scoreDoc.data();
-            existingRawScores = existingScore.rawScores;
-        }
-        
-        groupsData.push({
-            groupNumber: groupNum,
-            mainSV: groupDetails.mainSV || 'Not assigned',
-            coSV: groupDetails.coSV || 'Not assigned',
-            students: groupDetails.students || [],
-            studentCount: groupDetails.studentCount || 0,
-            isCompleted: completedGroups.includes(groupNum),
-            savedScore: existingScore,
-            savedRawScores: existingRawScores
-        });
+    // Get existing final score for this jury-group
+    const scoresRef = collection(db, 'scores');
+    const q = query(
+      scoresRef, 
+      where('juryPin', '==', juryData.pin),
+      where('groupNumber', '==', groupNum),
+      where('isFinal', '==', true)
+    );
+    const scoreSnapshot = await getDocs(q);
+    
+    let existingScore = null;
+    let existingRawScores = null;
+    
+    if (!scoreSnapshot.empty) {
+      const scoreDoc = scoreSnapshot.docs[0];
+      existingScore = scoreDoc.data();
+      existingRawScores = existingScore.rawScores;
     }
     
-    return groupsData;
+    groupsData.push({
+      groupNumber: groupNum,
+      mainSV: groupDetails.mainSV || 'Not assigned',
+      coSV: groupDetails.coSV || 'Not assigned',
+      students: groupDetails.students || [],
+      studentCount: groupDetails.studentCount || 0,
+      isCompleted: completedGroups.includes(groupNum),
+      evaluationStatus: evalStatus,
+      savedScore: existingScore,
+      savedRawScores: existingRawScores
+    });
+  }
+  
+  return groupsData;
 }
+
+// Start evaluating a group (sets status to active)
+export async function startEvaluatingGroup(juryPin, juryName, groupNumber) {
+  try {
+    // First, check if this jury has any other active evaluation
+    const allStatuses = await getAllEvaluationStatuses();
+    const juryStatuses = allStatuses.filter(s => s.juryPin === juryPin && s.status === 'active');
+    
+    // Close any other active evaluations for this jury
+    for (const active of juryStatuses) {
+      if (active.groupNumber !== groupNumber) {
+        await updateEvaluationStatus(juryPin, juryName, active.groupNumber, 'not_started');
+      }
+    }
+    
+    // Start the new evaluation
+    const result = await updateEvaluationStatus(juryPin, juryName, groupNumber, 'active');
+    
+    // Add audit log
+    await addDoc(collection(db, 'audit_logs'), {
+      action: 'START_EVALUATING',
+      adminName: juryName,
+      targetType: 'group',
+      targetId: `group_${groupNumber}`,
+      newValue: 'active',
+      timestamp: Timestamp.now()
+    });
+    
+    return result;
+  } catch (error) {
+    console.error('Error starting evaluation:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// ========================================
+// DRAFT FUNCTIONS (localStorage)
+// ========================================
 
 // Save draft to localStorage (not Firebase)
 export function saveDraftToLocalStorage(juryPin, groupNumber, rawScores, total) {
@@ -199,6 +324,10 @@ export function clearDraftFromLocalStorage(juryPin, groupNumber) {
   const draftKey = `draft_${juryPin}_${groupNumber}`;
   localStorage.removeItem(draftKey);
 }
+
+// ========================================
+// SUBMIT FINAL SCORE
+// ========================================
 
 // Submit final score to Firebase
 export async function submitFinalScore(juryPin, juryName, groupNumber, rawScores, total) {
@@ -274,6 +403,9 @@ export async function submitFinalScore(juryPin, juryName, groupNumber, rawScores
         });
       }
     }
+    
+    // Update evaluation status to completed
+    await updateEvaluationStatus(juryPin, juryName, groupNumber, 'completed');
     
     // Clear localStorage draft
     clearDraftFromLocalStorage(juryPin, groupNumber);
@@ -398,7 +530,6 @@ export async function calculateGroupAverages() {
   let rank = 1;
   for (let i = 0; i < groupAverages.length; i++) {
     if (i > 0 && groupAverages[i].finalAverage === groupAverages[i-1].finalAverage) {
-      // Same rank as previous
       groupAverages[i].rank = groupAverages[i-1].rank;
     } else {
       groupAverages[i].rank = rank;
@@ -564,7 +695,6 @@ export async function setJudgingOpen(isOpen, adminName) {
 
 // Export to CSV
 export function exportToCSV(groups, scores) {
-  // Build data rows
   const rows = [];
   rows.push(['Rank', 'Group Number', 'Final Average', 'Jury Count', 'A1 Avg', 'A2 Avg', 'A3 Avg', 'A4 Avg', 'A5 Avg']);
   
@@ -582,10 +712,7 @@ export function exportToCSV(groups, scores) {
     ]);
   });
   
-  // Convert to CSV string
   const csvContent = rows.map(row => row.join(',')).join('\n');
-  
-  // Download
   const blob = new Blob([csvContent], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -598,7 +725,7 @@ export function exportToCSV(groups, scores) {
 }
 
 // ========================================
-// DARK MODE TOGGLE (shared)
+// DARK MODE TOGGLE
 // ========================================
 
 export function initDarkMode() {
@@ -623,11 +750,10 @@ export function initDarkMode() {
 }
 
 // ========================================
-// CHECK IF ADMIN (simple protection)
+// ADMIN AUTHENTICATION
 // ========================================
 
-// Simple admin check - you can change the password
-const ADMIN_PASSWORD = 'admin123'; // CHANGE THIS!
+const ADMIN_PASSWORD = 'admin123'; // CHANGE THIS BEFORE EVENT!
 
 export function isAdminAuthenticated() {
   return sessionStorage.getItem('adminAuth') === 'true';
