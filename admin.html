@@ -22,14 +22,10 @@
             border-radius: 12px 12px 0 0;
             -webkit-overflow-scrolling: touch;
         }
-        
-        .tab-bar::-webkit-scrollbar {
-            height: 3px;
-        }
-        
+        .tab-bar::-webkit-scrollbar { height: 3px; }
         .tab {
             flex: 1;
-            min-width: 100px;
+            min-width: 90px;
             padding: 14px 8px;
             text-align: center;
             font-size: 13px;
@@ -41,21 +37,9 @@
             transition: all 0.2s ease;
             white-space: nowrap;
         }
-        
-        .tab.active {
-            color: var(--accent);
-            border-bottom: 3px solid var(--accent);
-            background: transparent;
-        }
-        
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
+        .tab.active { color: var(--accent); border-bottom: 3px solid var(--accent); }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
         
         /* Stats Cards */
         .stats-grid {
@@ -64,7 +48,6 @@
             gap: 12px;
             margin-bottom: 20px;
         }
-        
         .stat-card {
             background: var(--bg-card);
             padding: 16px;
@@ -72,18 +55,8 @@
             text-align: center;
             box-shadow: var(--shadow);
         }
-        
-        .stat-number {
-            font-size: 32px;
-            font-weight: 800;
-            color: var(--accent);
-        }
-        
-        .stat-label {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
+        .stat-number { font-size: 32px; font-weight: 800; color: var(--accent); }
+        .stat-label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
         
         /* Status Tables */
         .status-table {
@@ -91,19 +64,12 @@
             border-collapse: collapse;
             font-size: 13px;
         }
-        
         .status-table th, .status-table td {
             padding: 10px 8px;
             text-align: left;
             border-bottom: 1px solid var(--border);
         }
-        
-        .status-table th {
-            background: var(--bg-secondary);
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-        }
+        .status-table th { background: var(--bg-secondary); font-weight: 600; position: sticky; top: 0; }
         
         /* Section Headers */
         .section-header {
@@ -113,51 +79,9 @@
             padding: 8px 12px;
             border-radius: 10px;
         }
-        
-        .section-active {
-            background: rgba(255, 183, 3, 0.15);
-            border-left: 4px solid #ffb703;
-        }
-        
-        .section-wait {
-            background: rgba(239, 35, 60, 0.1);
-            border-left: 4px solid #ef233c;
-        }
-        
-        .section-completed {
-            background: rgba(6, 214, 160, 0.1);
-            border-left: 4px solid #06d6a0;
-        }
-        
-        /* Status Badges */
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 12px;
-            padding: 4px 8px;
-            border-radius: 20px;
-        }
-        
-        .status-active {
-            background: #ffb70320;
-            color: #ffb703;
-        }
-        
-        .status-completed {
-            background: #06d6a020;
-            color: #06d6a0;
-        }
-        
-        .status-draft {
-            background: #ffb70320;
-            color: #ffb703;
-        }
-        
-        .status-notstarted {
-            background: #ef233c20;
-            color: #ef233c;
-        }
+        .section-active { background: rgba(255, 183, 3, 0.15); border-left: 4px solid #ffb703; }
+        .section-wait { background: rgba(239, 35, 60, 0.1); border-left: 4px solid #ef233c; }
+        .section-completed { background: rgba(6, 214, 160, 0.1); border-left: 4px solid #06d6a0; }
         
         /* Panel Row (Expandable) */
         .panel-row {
@@ -166,7 +90,6 @@
             margin-bottom: 12px;
             overflow: hidden;
         }
-        
         .panel-header {
             display: flex;
             justify-content: space-between;
@@ -176,129 +99,88 @@
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: 12px;
-            transition: background 0.2s;
         }
+        .panel-name { font-weight: 700; font-size: 16px; }
+        .panel-content { padding: 16px; display: none; border: 1px solid var(--border); border-top: none; border-radius: 0 0 12px 12px; }
+        .panel-content.expanded { display: block; }
+        .group-status-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .group-status-item { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--bg-secondary); border-radius: 20px; font-size: 13px; }
         
-        .panel-header:hover {
-            background: var(--bg-secondary);
-        }
+        /* Progress Bar */
+        .progress-bar-small { width: 100px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; display: inline-block; margin-left: 8px; }
+        .progress-fill-small { height: 100%; background: linear-gradient(90deg, #06d6a0, #4361ee); width: 0%; border-radius: 3px; }
         
-        .panel-name {
-            font-weight: 700;
-            font-size: 16px;
-        }
+        /* Attention Items */
+        .attention-item { padding: 10px; margin-bottom: 8px; border-radius: 10px; background: var(--bg-secondary); }
+        .attention-zero { border-left: 4px solid #ef233c; }
+        .attention-one { border-left: 4px solid #ffb703; }
         
-        .panel-stats {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
+        /* Buttons */
+        .btn-small-icon { padding: 6px 10px; font-size: 12px; margin: 0 2px; }
+        .delete-selected-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
         
-        .panel-content {
-            padding: 16px;
-            display: none;
+        /* Mobile */
+        .swipe-hint { text-align: center; font-size: 11px; color: var(--text-muted); padding: 8px; display: none; }
+        @media (max-width: 600px) { .swipe-hint { display: block; } .tab { min-width: 70px; font-size: 11px; padding: 12px 4px; } }
+        
+        /* Jury Management */
+        .jury-row {
+            margin-bottom: 12px;
             border: 1px solid var(--border);
-            border-top: none;
-            border-radius: 0 0 12px 12px;
-        }
-        
-        .panel-content.expanded {
-            display: block;
-        }
-        
-        .group-status-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 12px;
-        }
-        
-        .group-status-item {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            background: var(--bg-secondary);
-            border-radius: 20px;
-            font-size: 13px;
-        }
-        
-        /* Progress bar small */
-        .progress-bar-small {
-            width: 100px;
-            height: 6px;
-            background: var(--border);
-            border-radius: 3px;
+            border-radius: 12px;
             overflow: hidden;
-            display: inline-block;
-            margin-left: 8px;
         }
-        
-        .progress-fill-small {
-            height: 100%;
-            background: linear-gradient(90deg, #06d6a0, #4361ee);
-            width: 0%;
-            border-radius: 3px;
-        }
-        
-        /* Mobile Responsive */
-        @media (max-width: 600px) {
-            .tab {
-                min-width: 70px;
-                font-size: 11px;
-                padding: 12px 4px;
-            }
-            .status-table th, .status-table td {
-                padding: 8px 4px;
-                font-size: 11px;
-            }
-            .group-status-item {
-                font-size: 11px;
-                padding: 4px 8px;
-            }
-        }
-        
-        .attention-item {
-            padding: 10px;
-            margin-bottom: 8px;
-            border-radius: 10px;
-            background: var(--bg-secondary);
-        }
-        
-        .attention-zero {
-            border-left: 4px solid #ef233c;
-        }
-        
-        .attention-one {
-            border-left: 4px solid #ffb703;
-        }
-        
-        .btn-small-icon {
-            padding: 6px 10px;
-            font-size: 12px;
-            margin: 0 2px;
-        }
-        
-        .delete-selected-bar {
+        .jury-row-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-            gap: 10px;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            cursor: pointer;
+        }
+        .jury-row-content { padding: 16px; display: none; border-top: 1px solid var(--border); }
+        .jury-row-content.expanded { display: block; }
+        .group-badge { display: inline-block; padding: 4px 10px; margin: 4px; background: var(--bg-card); border-radius: 20px; font-size: 12px; border: 1px solid var(--border); }
+        
+        /* Sticky Table Container */
+        .sticky-table-container {
+            overflow-x: auto;
+            max-height: 60vh;
+            overflow-y: auto;
         }
         
-        .swipe-hint {
-            text-align: center;
-            font-size: 11px;
-            color: var(--text-muted);
-            padding: 8px;
+        /* Modal */
+        .modal {
             display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
         }
-        
-        @media (max-width: 600px) {
-            .swipe-hint {
-                display: block;
-            }
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+        }
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
+        .modal-footer button {
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
         }
     </style>
 </head>
@@ -312,7 +194,6 @@
         <div class="card" id="authCard">
             <h1>👑 Admin Dashboard</h1>
             <p class="subtitle">Live Monitoring & Control Panel</p>
-            
             <div id="authSection">
                 <div class="form-group">
                     <label>Admin Password</label>
@@ -346,7 +227,7 @@
                     <div class="stat-card"><div class="stat-number" id="totalGroups">0</div><div class="stat-label">Total Groups</div></div>
                     <div class="stat-card"><div class="stat-number" id="checkedInJuries">0</div><div class="stat-label">Juries Checked In</div></div>
                     <div class="stat-card"><div class="stat-number" id="activeEvaluations">0</div><div class="stat-label">Active Evaluations</div></div>
-                    <div class="stat-card"><div class="stat-number" id="completedGroups">0</div><div class="stat-label">Groups Completed</div></div>
+                    <div class="stat-card"><div class="stat-number" id="completedGroups">0</div><div class="stat-label">Groups Fully Marked</div></div>
                 </div>
                 
                 <div class="card">
@@ -355,8 +236,18 @@
                 </div>
                 
                 <div class="card">
-                    <h3>⚠️ Quick Alerts</h3>
-                    <div id="quickAlerts">Loading...</div>
+                    <h3>⚠️ Attention Required</h3>
+                    <div id="attentionGroups">Loading...</div>
+                </div>
+                
+                <div class="card">
+                    <h3>👥 Jury Progress</h3>
+                    <div class="table-container">
+                        <table class="status-table">
+                            <thead><tr><th>Jury Name</th><th>PIN</th><th>Checked</th><th>Assigned</th><th>Completed</th><th>Progress</th><th>Action</th></tr></thead>
+                            <tbody id="juryTableBody"><tr><td colspan="7">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             
@@ -396,23 +287,65 @@
                         <h3 style="margin: 0;">🏆 Group Rankings</h3>
                         <button id="exportRankingsBtn" class="btn btn-secondary btn-sm">📊 Export CSV</button>
                     </div>
-                    <div class="sticky-table-container" style="max-height: 60vh; overflow-y: auto;">
+                    <div class="sticky-table-container">
                         <table class="status-table">
                             <thead>
-                                <tr>
-                                    <th>Rank</th><th>Group</th><th>Average</th><th>Juries</th><th>A1</th><th>A2</th><th>A3</th><th>A4</th><th>A5</th><th>Action</th>
-                                </tr>
+                                <tr><th>Rank</th><th>Group</th><th>Project</th><th>Average</th><th>Juries</th><th>A1</th><th>A2</th><th>A3</th><th>A4</th><th>A5</th><th>Action</th></tr>
                             </thead>
-                            <tbody id="rankingTableBody"><tr><td colspan="10">Loading...</td></tr></tbody>
+                            <tbody id="rankingTableBody"><tr><td colspan="11">Loading...</td></tr></tbody>
                         </table>
                     </div>
                 </div>
             </div>
             
             <!-- ======================================== -->
-            <!-- TAB 6: ADMIN -->
+            <!-- TAB 6: ADMIN (with Jury Management) -->
             <!-- ======================================== -->
             <div id="tab-admin" class="tab-content">
+                
+                <!-- Create New Jury -->
+                <div class="card">
+                    <h3>➕ Create New Jury</h3>
+                    <div class="form-group">
+                        <label>Jury Name</label>
+                        <input type="text" id="newJuryName" placeholder="e.g., Dr. Ahmad">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number (for WhatsApp)</label>
+                        <input type="text" id="newJuryPhone" placeholder="e.g., +60123456789">
+                    </div>
+                    <div class="form-group">
+                        <label>Assign Groups</label>
+                        <select id="newJuryGroups" multiple size="5">
+                            <option value="">Loading groups...</option>
+                        </select>
+                        <small>Hold Ctrl (Windows) or Cmd (Mac) to select multiple</small>
+                    </div>
+                    <button id="createJuryBtn" class="btn btn-primary">🔑 Create Jury & Generate PIN</button>
+                    <div id="createJuryResult" class="alert hidden" style="margin-top: 12px;"></div>
+                </div>
+                
+                <!-- Jury Management Table -->
+                <div class="card">
+                    <h3>👥 Manage Existing Juries</h3>
+                    <div id="juryManagementContainer">Loading juries...</div>
+                </div>
+                
+                <!-- Reassign Groups -->
+                <div class="card">
+                    <h3>📋 Reassign Groups to Existing Jury</h3>
+                    <div class="form-group">
+                        <label>Select Jury</label>
+                        <select id="reassignJurySelect"><option>Loading juries...</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Assign Groups</label>
+                        <select id="reassignGroupsSelect" multiple size="5"></select>
+                    </div>
+                    <button id="reassignGroupsBtn" class="btn btn-primary">Save Assignment</button>
+                </div>
+                
+                <!-- Quick Actions -->
                 <div class="card">
                     <h3>⚡ Quick Actions</h3>
                     <div class="button-group">
@@ -422,18 +355,7 @@
                     </div>
                 </div>
                 
-                <div class="card">
-                    <h3>👥 Manage Juries</h3>
-                    <div class="form-group">
-                        <label>Create New Jury</label>
-                        <input type="text" id="newJuryName" placeholder="Jury Name">
-                        <input type="text" id="newJuryPhone" placeholder="Phone Number" style="margin-top: 8px;">
-                        <select id="newJuryGroups" multiple size="4" style="margin-top: 8px;"></select>
-                        <button id="createJuryBtn" class="btn btn-primary" style="margin-top: 12px;">Create Jury</button>
-                    </div>
-                    <div id="createJuryResult" class="alert hidden"></div>
-                </div>
-                
+                <!-- Audit Logs -->
                 <div class="card">
                     <h3>📜 Audit Logs</h3>
                     <div class="table-container">
@@ -442,27 +364,35 @@
                             <tbody id="auditTableBody"><tr><td colspan="4">Loading...</td></tr></tbody>
                         </table>
                     </div>
+                    <button id="refreshAuditBtn" class="btn btn-secondary btn-sm" style="margin-top: 12px;">🔄 Refresh Logs</button>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Modals -->
+    <!-- Modal: Override Score -->
     <div id="overrideModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">Override Group Score</div>
             <div class="form-group"><label>Group Number</label><input type="number" id="overrideGroupNumber" readonly></div>
             <div class="form-group"><label>New Score (0-100)</label><input type="number" id="overrideNewScore" min="0" max="100" step="0.1"></div>
-            <div class="form-group"><label>Reason</label><textarea id="overrideReason" rows="3"></textarea></div>
-            <div class="modal-footer"><button id="cancelOverrideBtn">Cancel</button><button id="confirmOverrideBtn">Confirm</button></div>
+            <div class="form-group"><label>Reason for Override</label><textarea id="overrideReason" rows="3"></textarea></div>
+            <div class="modal-footer">
+                <button id="cancelOverrideBtn" class="btn btn-secondary">Cancel</button>
+                <button id="confirmOverrideBtn" class="btn btn-danger">Confirm</button>
+            </div>
         </div>
     </div>
     
+    <!-- Modal: Extend Time -->
     <div id="extendTimeModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">Extend Judging Time</div>
             <div class="form-group"><label>New End Date & Time</label><input type="datetime-local" id="newEndTime"></div>
-            <div class="modal-footer"><button id="cancelExtendBtn">Cancel</button><button id="confirmExtendBtn">Extend</button></div>
+            <div class="modal-footer">
+                <button id="cancelExtendBtn" class="btn btn-secondary">Cancel</button>
+                <button id="confirmExtendBtn" class="btn btn-primary">Extend</button>
+            </div>
         </div>
     </div>
 
@@ -523,14 +453,21 @@
             }
         });
         
+        // ========================================
+        // LOAD ALL DATA
+        // ========================================
         async function loadAllData() { 
-            await loadSystemStatus();
+            await loadSystemStatus(); 
             await loadEvaluationStatus();
             await loadPanelView();
             await loadGroupView();
             await loadRankings();
-            await loadQuickAlerts();
-            await loadJuryOptions();
+            await loadAttentionGroups();
+            await loadJuryTable();
+            await loadJuryManagement();
+            await loadReassignDropdowns();
+            await loadAuditLogs();
+            await loadGroupOptions();
         }
         
         async function loadSystemStatus() {
@@ -557,7 +494,6 @@
                 evalSnapshot.forEach(doc => statuses.push({ id: doc.id, ...doc.data() }));
                 evaluationStatuses = statuses;
                 
-                // Get all groups and juries
                 const groups = await getAllGroups();
                 const juries = await getAllJuries();
                 
@@ -575,15 +511,13 @@
                         activeList.push({
                             groupNumber: group.number,
                             projectTitle: group.projectTitle || '-',
-                            juryName: jury?.name || activeEval.juryName,
-                            startedAt: activeEval.startedAt
+                            juryName: jury?.name || activeEval.juryName
                         });
                     } else if (completedEval.length > 0) {
                         completedList.push({
                             groupNumber: group.number,
                             projectTitle: group.projectTitle || '-',
-                            juriesDone: completedEval.length,
-                            totalJuries: group.assignedJuriesCount || 1
+                            juriesDone: completedEval.length
                         });
                     } else {
                         notStartedList.push({
@@ -605,7 +539,7 @@
                     </div>
                     <div class="card">
                         <div class="section-header section-wait">⚪ NOT STARTED</div>
-                        ${notStartedList.length === 0 ? '<p>All groups have started evaluation</p>' : `
+                        ${notStartedList.length === 0 ? '<p>All groups have started</p>' : `
                             <table class="status-table">
                                 <thead><tr><th>Group</th><th>Project</th></tr></thead>
                                 <tbody>${notStartedList.map(g => `<tr><td><strong>Group ${g.groupNumber}</strong></td><td>${g.projectTitle}</td></tr>`).join('')}</tbody>
@@ -617,7 +551,7 @@
                         ${completedList.length === 0 ? '<p>No groups completed yet</p>' : `
                             <table class="status-table">
                                 <thead><tr><th>Group</th><th>Project</th><th>Progress</th></tr></thead>
-                                <tbody>${completedList.map(g => `<tr><td><strong>Group ${g.groupNumber}</strong></td><td>${g.projectTitle}</td><td>${g.juriesDone}/${g.totalJuries} juries</td></tr>`).join('')}</tbody>
+                                <tbody>${completedList.map(g => `<tr><td><strong>Group ${g.groupNumber}</strong></td><td>${g.projectTitle}</td><td>${g.juriesDone} jury(s)</td></tr>`).join('')}</tbody>
                             </table>
                         `}
                     </div>
@@ -627,96 +561,68 @@
                 
             } catch (error) {
                 console.error('Error loading evaluation status:', error);
-                document.getElementById('evalStatusContainer').innerHTML = '<div class="card"><p>❌ Error loading data</p></div>';
+                document.getElementById('evalStatusContainer').innerHTML = '<div class="card"><p>❌ Error loading</p></div>';
             }
         }
         
         async function loadPanelView() {
             const juries = await getAllJuries();
-            const statuses = evaluationStatuses;
-            
             let html = '';
             for (const jury of juries) {
                 const assignedGroups = jury.assignedGroups || [];
                 const completedGroups = jury.completedGroups || [];
-                
                 let groupStatusHtml = '';
                 for (const groupNum of assignedGroups) {
-                    const status = statuses.find(s => s.juryPin === jury.pin && s.groupNumber === groupNum);
-                    let statusIcon = '🔴';
-                    if (completedGroups.includes(groupNum)) statusIcon = '✅';
-                    else if (status?.status === 'active') statusIcon = '🟡';
-                    else if (status?.status === 'completed') statusIcon = '✅';
-                    
-                    groupStatusHtml += `<span class="group-status-item">${statusIcon} Group ${groupNum}</span>`;
+                    const status = evaluationStatuses.find(s => s.juryPin === jury.pin && s.groupNumber === groupNum);
+                    let icon = '🔴';
+                    if (completedGroups.includes(groupNum)) icon = '✅';
+                    else if (status?.status === 'active') icon = '🟡';
+                    groupStatusHtml += `<span class="group-status-item">${icon} Group ${groupNum}</span>`;
                 }
-                
-                const completedCount = completedGroups.length;
-                const percent = assignedGroups.length ? (completedCount / assignedGroups.length * 100).toFixed(0) : 0;
-                
+                const percent = assignedGroups.length ? (completedGroups.length / assignedGroups.length * 100).toFixed(0) : 0;
                 html += `
                     <div class="panel-row">
                         <div class="panel-header" onclick="this.nextElementSibling.classList.toggle('expanded')">
-                            <div>
-                                <span class="panel-name">${jury.name || 'Unnamed'}</span>
-                                <span class="panel-stats"> (${jury.pin})</span>
-                            </div>
-                            <div>
-                                <span>${completedCount}/${assignedGroups.length} completed</span>
-                                <div class="progress-bar-small"><div class="progress-fill-small" style="width: ${percent}%"></div></div>
-                            </div>
+                            <div><span class="panel-name">${jury.name || 'Unnamed'}</span> <span style="font-size:12px">(${jury.pin})</span></div>
+                            <div>${completedGroups.length}/${assignedGroups.length} completed <div class="progress-bar-small"><div class="progress-fill-small" style="width: ${percent}%"></div></div></div>
                         </div>
                         <div class="panel-content">
                             <div class="group-status-grid">${groupStatusHtml}</div>
-                            <div style="margin-top: 12px; font-size: 12px; color: var(--text-secondary);">
-                                Checked In: ${jury.checkedIn ? '✅ Yes' : '❌ No'}
-                            </div>
+                            <div style="margin-top:12px; font-size:12px;">Checked In: ${jury.checkedIn ? '✅ Yes' : '❌ No'} | Phone: ${jury.phone || '-'}</div>
                         </div>
                     </div>
                 `;
             }
-            
             document.getElementById('panelContainer').innerHTML = html || '<div class="card"><p>No juries created yet</p></div>';
         }
         
         async function loadGroupView() {
             const groups = await getAllGroups();
             const juries = await getAllJuries();
-            const statuses = evaluationStatuses;
             const scores = await getAllScores();
             
             let html = '<div class="table-container"><table class="status-table"><thead><tr><th>Group</th><th>Project</th><th>Assigned Juries</th><th>Status</th><th>Scores</th></tr></thead><tbody>';
             
             for (const group of groups) {
                 const assignedJuries = juries.filter(j => j.assignedGroups?.includes(group.number));
-                const groupStatuses = statuses.filter(s => s.groupNumber === group.number);
-                const groupScores = scores.filter(s => s.groupNumber === group.number);
-                
                 let assignedHtml = '';
-                let statusHtml = '';
                 let scoresHtml = '';
+                let allCompleted = true;
+                let anyActive = false;
                 
                 for (const jury of assignedJuries) {
-                    const status = groupStatuses.find(s => s.juryPin === jury.pin);
-                    const score = groupScores.find(s => s.juryPin === jury.pin);
-                    let icon = '🔴';
-                    if (jury.completedGroups?.includes(group.number)) icon = '✅';
-                    else if (status?.status === 'active') icon = '🟡';
-                    
+                    const isCompleted = jury.completedGroups?.includes(group.number);
+                    const isActive = evaluationStatuses.some(s => s.juryPin === jury.pin && s.groupNumber === group.number && s.status === 'active');
+                    if (!isCompleted) allCompleted = false;
+                    if (isActive) anyActive = true;
+                    const icon = isCompleted ? '✅' : (isActive ? '🟡' : '🔴');
                     assignedHtml += `<div>${icon} ${jury.name || jury.pin}</div>`;
+                    const score = scores.find(s => s.juryPin === jury.pin && s.groupNumber === group.number);
                     if (score) scoresHtml += `<div>${jury.name}: ${score.total}/100</div>`;
                 }
                 
-                const allCompleted = assignedJuries.every(j => j.completedGroups?.includes(group.number));
-                statusHtml = allCompleted ? '✅ All done' : assignedJuries.some(j => j.completedGroups?.includes(group.number)) ? '🟡 Partial' : '⚪ Not started';
-                
-                html += `<tr>
-                    <td><strong>Group ${group.number}</strong></td>
-                    <td>${group.projectTitle || '-'}</td>
-                    <td>${assignedHtml}</td>
-                    <td>${statusHtml}</td>
-                    <td>${scoresHtml || '-'}</td>
-                </tr>`;
+                let statusText = allCompleted ? '✅ All done' : (anyActive ? '🟡 In progress' : '⚪ Not started');
+                html += `<tr><td><strong>Group ${group.number}</strong></td><td>${group.projectTitle || '-'}</td><td>${assignedHtml}</td><td>${statusText}</td><td>${scoresHtml || '-'}</td></tr>`;
             }
             
             html += '</tbody></table></div>';
@@ -726,14 +632,17 @@
         async function loadRankings() {
             const averages = await calculateGroupAverages();
             await updateGroupRanks();
+            const groups = await getAllGroups();
             const tbody = document.getElementById('rankingTableBody');
             if (averages.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10">No scores yet</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="11">No scores yet</td></tr>';
             } else {
-                tbody.innerHTML = averages.map(g => `
-                    <tr>
+                tbody.innerHTML = averages.map(g => {
+                    const group = groups.find(gr => gr.number === g.groupNumber);
+                    return `<tr>
                         <td>${g.rank}</td>
                         <td><strong>Group ${g.groupNumber}</strong></td>
+                        <td>${group?.projectTitle || '-'}</td>
                         <td>${g.finalAverage.toFixed(2)}</td>
                         <td>${g.juryCount || 0}</td>
                         <td>${g.a1_avg?.toFixed(2) || 0}</td>
@@ -742,37 +651,175 @@
                         <td>${g.a4_avg?.toFixed(2) || 0}</td>
                         <td>${g.a5_avg?.toFixed(2) || 0}</td>
                         <td><button class="btn btn-sm btn-warning" onclick="window.showOverrideModal(${g.groupNumber}, ${g.finalAverage})">Override</button></td>
-                    </tr>
-                `).join('');
+                    </tr>`;
+                }).join('');
             }
         }
         
-        async function loadQuickAlerts() {
+        async function loadAttentionGroups() {
             const groups = await getAllGroups();
-            const statuses = evaluationStatuses;
+            const activeGroups = evaluationStatuses.filter(s => s.status === 'active').map(s => s.groupNumber);
+            const notStartedGroups = groups.filter(g => !evaluationStatuses.some(s => s.groupNumber === g.number)).map(g => g.number);
             
-            const notStartedGroups = [];
-            const activeGroups = [];
-            
-            for (const group of groups) {
-                const hasActive = statuses.some(s => s.groupNumber === group.number && s.status === 'active');
-                const hasAny = statuses.some(s => s.groupNumber === group.number);
-                
-                if (hasActive) activeGroups.push(group.number);
-                else if (!hasAny) notStartedGroups.push(group.number);
-            }
-            
-            document.getElementById('quickAlerts').innerHTML = `
-                <div class="attention-item attention-zero">
-                    <strong>🔴 Not started:</strong> ${notStartedGroups.length > 0 ? notStartedGroups.join(', ') : 'None ✅'}
-                </div>
-                <div class="attention-item attention-one">
-                    <strong>🟡 Active now:</strong> ${activeGroups.length > 0 ? activeGroups.join(', ') : 'None'}
-                </div>
+            document.getElementById('attentionGroups').innerHTML = `
+                <div class="attention-item attention-zero"><strong>🔴 Not started:</strong> ${notStartedGroups.length > 0 ? notStartedGroups.join(', ') : 'None ✅'}</div>
+                <div class="attention-item attention-one"><strong>🟡 Active now:</strong> ${activeGroups.length > 0 ? activeGroups.join(', ') : 'None'}</div>
             `;
         }
         
-        async function loadJuryOptions() {
+        async function loadJuryTable() {
+            const juries = await getAllJuries();
+            currentJuries = juries;
+            document.getElementById('checkedInJuries').innerText = juries.filter(j => j.checkedIn).length;
+            const tbody = document.getElementById('juryTableBody');
+            if (juries.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7">No juries created yet</td></tr>';
+            } else {
+                tbody.innerHTML = juries.map(jury => {
+                    const assignedCount = jury.assignedGroups?.length || 0;
+                    const completedCount = jury.completedGroups?.length || 0;
+                    const percent = assignedCount ? (completedCount / assignedCount * 100).toFixed(0) : 0;
+                    return `<tr>
+                        <td>${jury.name || 'Unnamed'}</td>
+                        <td><code>${jury.pin}</code></td>
+                        <td>${jury.checkedIn ? '✅' : '❌'}</td>
+                        <td>${assignedCount}</td>
+                        <td>${completedCount}</td>
+                        <td><div class="progress-bar-small"><div class="progress-fill-small" style="width: ${percent}%"></div></div></td>
+                        <td><button class="btn btn-sm btn-secondary" onclick="window.viewJuryDetails('${jury.id}')">View</button></td>
+                    </tr>`;
+                }).join('');
+            }
+        }
+        
+        window.viewJuryDetails = (juryId) => {
+            const jury = currentJuries.find(j => j.id === juryId);
+            alert(`Jury: ${jury.name || 'Unnamed'}\nPIN: ${jury.pin}\nPhone: ${jury.phone || '-'}\nAssigned Groups: ${jury.assignedGroups?.join(', ') || 'None'}\nCompleted Groups: ${jury.completedGroups?.join(', ') || 'None'}\nChecked In: ${jury.checkedIn ? 'Yes' : 'No'}`);
+        };
+        
+        async function loadJuryManagement() {
+            const juries = await getAllJuries();
+            const groups = await getAllGroups();
+            if (juries.length === 0) {
+                document.getElementById('juryManagementContainer').innerHTML = '<p>No juries created yet. Use form above to create.</p>';
+                return;
+            }
+            
+            let html = '';
+            for (const jury of juries) {
+                const assignedGroupNumbers = jury.assignedGroups || [];
+                const completedCount = jury.completedGroups?.length || 0;
+                const totalCount = assignedGroupNumbers.length;
+                html += `
+                    <div class="jury-row">
+                        <div class="jury-row-header" onclick="this.nextElementSibling.classList.toggle('expanded')">
+                            <div><strong>${jury.name || 'Unnamed'}</strong> <span style="font-size:12px">(${jury.pin})</span></div>
+                            <div>
+                                ${completedCount}/${totalCount} completed
+                                <button class="btn btn-sm btn-primary btn-small-icon" onclick="event.stopPropagation(); window.editJuryName('${jury.id}', '${(jury.name || '').replace(/'/g, "\\'")}')">✏️ Edit</button>
+                                <button class="btn btn-sm btn-danger btn-small-icon" onclick="event.stopPropagation(); window.deleteJury('${jury.id}', '${(jury.name || 'Unnamed').replace(/'/g, "\\'")}')">🗑️ Delete</button>
+                            </div>
+                        </div>
+                        <div class="jury-row-content">
+                            <div><strong>Phone:</strong> ${jury.phone || '-'}</div>
+                            <div><strong>Assigned Groups:</strong> <div style="margin-top:8px">${assignedGroupNumbers.map(gn => `<span class="group-badge">Group ${gn}</span>`).join('')}</div></div>
+                            <div><strong>Completed Groups:</strong> ${completedCount}/${totalCount}</div>
+                            <div><strong>Checked In:</strong> ${jury.checkedIn ? '✅ Yes' : '❌ No'}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            document.getElementById('juryManagementContainer').innerHTML = html;
+        }
+        
+        window.editJuryName = async (juryId, currentName) => {
+            const newName = prompt('Enter new jury name:', currentName);
+            if (newName && newName.trim()) {
+                try {
+                    await updateDoc(doc(db, 'juries', juryId), { name: newName.trim() });
+                    alert('✅ Name updated successfully!');
+                    loadAllData();
+                } catch (error) {
+                    alert('❌ Error: ' + error.message);
+                }
+            }
+        };
+        
+        window.deleteJury = async (juryId, juryName) => {
+            if (confirm(`Delete jury "${juryName}"? This will also delete all their scores. Cannot be undone.`)) {
+                try {
+                    const juryDoc = await getDoc(doc(db, 'juries', juryId));
+                    const juryPin = juryDoc.data()?.pin;
+                    if (juryPin) {
+                        const scoresRef = collection(db, 'scores');
+                        const q = query(scoresRef, where('juryPin', '==', juryPin));
+                        const scores = await getDocs(q);
+                        const batch = writeBatch(db);
+                        scores.forEach(score => batch.delete(score.ref));
+                        await batch.commit();
+                    }
+                    await deleteDoc(doc(db, 'juries', juryId));
+                    alert('✅ Jury deleted successfully');
+                    loadAllData();
+                } catch (error) {
+                    alert('❌ Error: ' + error.message);
+                }
+            }
+        };
+        
+        async function loadReassignDropdowns() {
+            const juries = await getAllJuries();
+            const groups = await getAllGroups();
+            const jurySelect = document.getElementById('reassignJurySelect');
+            jurySelect.innerHTML = '<option value="">Select Jury</option>' + juries.map(j => `<option value="${j.id}">${j.name || 'Unnamed'} (${j.pin})</option>`).join('');
+            const groupSelect = document.getElementById('reassignGroupsSelect');
+            groupSelect.innerHTML = groups.map(g => `<option value="${g.number}">Group ${g.number} - ${g.projectTitle || ''}</option>`).join('');
+        }
+        
+        document.getElementById('reassignGroupsBtn').addEventListener('click', async () => {
+            const juryId = document.getElementById('reassignJurySelect').value;
+            const selected = Array.from(document.getElementById('reassignGroupsSelect').selectedOptions).map(opt => parseInt(opt.value));
+            if (!juryId) { alert('Please select a jury'); return; }
+            if (selected.length === 0) { alert('Please select at least one group'); return; }
+            try {
+                await updateDoc(doc(db, 'juries', juryId), { assignedGroups: selected });
+                alert('✅ Groups reassigned successfully');
+                loadAllData();
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        });
+        
+        async function loadAuditLogs() {
+            try {
+                const auditRef = collection(db, 'audit_logs');
+                const q = query(auditRef, orderBy('timestamp', 'desc'), limit(50));
+                const snapshot = await getDocs(q);
+                const tbody = document.getElementById('auditTableBody');
+                if (snapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="4">No audit logs yet</td></tr>';
+                } else {
+                    tbody.innerHTML = '';
+                    snapshot.forEach(doc => {
+                        const log = doc.data();
+                        const time = log.timestamp?.toDate().toLocaleString() || 'Unknown';
+                        tbody.innerHTML += `<tr>
+                            <td>${time}</td>
+                            <td>${log.action}</td>
+                            <td>${log.targetType}</td>
+                            <td>${log.reason || log.newValue || '-'}</td>
+                        </tr>`;
+                    });
+                }
+            } catch (error) {
+                console.error('Audit log error:', error);
+                document.getElementById('auditTableBody').innerHTML = '<tr><td colspan="4">Error loading logs</td></tr>';
+            }
+        }
+        
+        document.getElementById('refreshAuditBtn')?.addEventListener('click', () => loadAuditLogs());
+        
+        async function loadGroupOptions() {
             const groups = await getAllGroups();
             const select = document.getElementById('newJuryGroups');
             select.innerHTML = groups.map(g => `<option value="${g.number}">Group ${g.number} - ${g.projectTitle || ''}</option>`).join('');
@@ -789,40 +836,52 @@
             const name = document.getElementById('newJuryName').value.trim();
             const phone = document.getElementById('newJuryPhone').value.trim();
             const selected = Array.from(document.getElementById('newJuryGroups').selectedOptions).map(opt => parseInt(opt.value));
-            
-            if (!name) { alert('Enter jury name'); return; }
-            if (selected.length === 0) { alert('Select at least one group'); return; }
+            if (!name) { alert('Please enter jury name'); return; }
+            if (selected.length === 0) { alert('Please assign at least one group'); return; }
             
             const pin = generatePIN();
             const resultDiv = document.getElementById('createJuryResult');
             
             try {
                 await addDoc(collection(db, 'juries'), {
-                    pin, name, phone, assignedGroups: selected, checkedIn: false, completedGroups: [], createdAt: Timestamp.now()
+                    pin: pin,
+                    name: name,
+                    phone: phone,
+                    assignedGroups: selected,
+                    checkedIn: false,
+                    completedGroups: [],
+                    createdAt: Timestamp.now()
                 });
+                
                 const juryUrl = `${window.location.origin}${window.location.pathname.replace('admin.html', 'jury.html')}`;
-                const whatsappLink = `https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(name)}%2C%0AYour%20PIN%3A%20*${pin}*%0ALogin%3A%20${encodeURIComponent(juryUrl)}`;
+                const whatsappLink = `https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(name)}%2C%0A%0AYour%20Exhibition%20Judging%20System%20PIN%20is%3A%20*${pin}*%0A%0AClick%20here%20to%20login%3A%0A${encodeURIComponent(juryUrl)}%0A%0AThank%20you%20for%20being%20our%20industry%20panelist.`;
+                
                 resultDiv.className = 'alert alert-success';
-                resultDiv.innerHTML = `✅ Jury created! PIN: ${pin}<br><a href="${whatsappLink}" target="_blank">📱 Send WhatsApp</a>`;
+                resultDiv.innerHTML = `✅ Jury created!<br><strong>PIN:</strong> ${pin}<br><strong>Name:</strong> ${name}<br><strong>Groups:</strong> ${selected.join(', ')}<br><br><a href="${whatsappLink}" target="_blank" class="btn btn-success" style="display:inline-block; margin-top:8px;">📱 Send via WhatsApp</a>`;
+                resultDiv.classList.remove('hidden');
+                
                 document.getElementById('newJuryName').value = '';
                 document.getElementById('newJuryPhone').value = '';
+                document.getElementById('newJuryGroups').selectedIndex = -1;
+                
                 loadAllData();
+                
             } catch (error) {
                 resultDiv.className = 'alert alert-error';
                 resultDiv.innerHTML = `❌ Error: ${error.message}`;
+                resultDiv.classList.remove('hidden');
             }
         });
         
         document.getElementById('exportGroupBtn').addEventListener('click', async () => {
             const groups = await getAllGroups();
             const juries = await getAllJuries();
-            const statuses = evaluationStatuses;
-            const csvRows = [['Group', 'Project', 'Assigned Juries', 'Status', 'Scores']];
+            const csvRows = [['Group', 'Project', 'Assigned Juries', 'Status']];
             for (const group of groups) {
                 const assigned = juries.filter(j => j.assignedGroups?.includes(group.number)).map(j => j.name).join(',');
-                const hasActive = statuses.some(s => s.groupNumber === group.number && s.status === 'active');
+                const hasActive = evaluationStatuses.some(s => s.groupNumber === group.number && s.status === 'active');
                 const status = hasActive ? 'Active' : 'Not Started';
-                csvRows.push([group.number, group.projectTitle || '', assigned, status, '']);
+                csvRows.push([group.number, group.projectTitle || '', assigned, status]);
             }
             const csv = csvRows.map(row => row.join(',')).join('\n');
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -840,11 +899,19 @@
         });
         
         document.getElementById('refreshDataBtn').addEventListener('click', () => loadAllData());
-        document.getElementById('extendTimeBtn').addEventListener('click', () => document.getElementById('extendTimeModal').style.display = 'flex');
+        
+        document.getElementById('extendTimeBtn').addEventListener('click', () => {
+            const defaultTime = new Date();
+            defaultTime.setHours(defaultTime.getHours() + 2);
+            document.getElementById('newEndTime').value = defaultTime.toISOString().slice(0, 16);
+            document.getElementById('extendTimeModal').style.display = 'flex';
+        });
+        
         document.getElementById('toggleSystemBtn').addEventListener('click', async () => {
             const settingsRef = doc(db, 'settings', 'current');
             const docSnap = await getDoc(settingsRef);
-            await setJudgingOpen(!docSnap.data()?.isOpen, 'Admin');
+            const newState = !docSnap.data()?.isOpen;
+            await setJudgingOpen(newState, 'Admin');
             loadAllData();
         });
         
@@ -854,21 +921,34 @@
             document.getElementById('extendTimeModal').style.display = 'none';
             loadAllData();
         });
-        document.getElementById('cancelExtendBtn').addEventListener('click', () => document.getElementById('extendTimeModal').style.display = 'none');
-        document.getElementById('cancelOverrideBtn').addEventListener('click', () => document.getElementById('overrideModal').style.display = 'none');
+        
+        document.getElementById('cancelExtendBtn').addEventListener('click', () => {
+            document.getElementById('extendTimeModal').style.display = 'none';
+        });
+        
+        document.getElementById('cancelOverrideBtn').addEventListener('click', () => {
+            document.getElementById('overrideModal').style.display = 'none';
+        });
+        
         document.getElementById('confirmOverrideBtn').addEventListener('click', async () => {
             const groupNum = parseInt(document.getElementById('overrideGroupNumber').value);
             const newScore = parseFloat(document.getElementById('overrideNewScore').value);
             const reason = document.getElementById('overrideReason').value;
-            if (!reason) { alert('Provide reason'); return; }
-            await overrideGroupScore(groupNum, newScore, reason, 'Admin');
-            document.getElementById('overrideModal').style.display = 'none';
-            loadRankings();
+            if (!reason) { alert('Please provide a reason for override'); return; }
+            const result = await overrideGroupScore(groupNum, newScore, reason, 'Admin');
+            if (result.success) {
+                alert(`Group ${groupNum} score overridden to ${newScore}`);
+                document.getElementById('overrideModal').style.display = 'none';
+                loadRankings();
+                loadAuditLogs();
+            } else {
+                alert(`Error: ${result.error}`);
+            }
         });
         
-        window.showOverrideModal = (groupNum, current) => {
+        window.showOverrideModal = (groupNum, currentScore) => {
             document.getElementById('overrideGroupNumber').value = groupNum;
-            document.getElementById('overrideNewScore').value = current;
+            document.getElementById('overrideNewScore').value = currentScore;
             document.getElementById('overrideReason').value = '';
             document.getElementById('overrideModal').style.display = 'flex';
         };
@@ -880,7 +960,9 @@
                 if (isAdminAuthenticated()) {
                     loadEvaluationStatus();
                     loadPanelView();
-                    loadQuickAlerts();
+                    loadAttentionGroups();
+                    loadJuryTable();
+                    loadJuryManagement();
                 }
             }, 10000);
         }
@@ -889,6 +971,7 @@
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             document.getElementById('darkModeToggle').textContent = isDark ? '☀️' : '🌙';
         }
+        
         const observer = new MutationObserver(updateToggleIcon);
         observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
         updateToggleIcon();
