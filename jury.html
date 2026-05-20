@@ -27,14 +27,19 @@
                 <input type="text" id="pinInput" placeholder="e.g., JURY-4821" autocomplete="off">
             </div>
             
-            <div class="form-group">
+            <!-- Name field - hidden by default, shown only if no name exists in database -->
+            <div id="nameFieldGroup" class="form-group hidden">
                 <label>Your Full Name</label>
                 <input type="text" id="nameInput" placeholder="e.g., Dr. Ahmad bin Abdullah" autocomplete="off">
             </div>
             
             <button id="loginBtn" class="btn btn-primary">Login to Continue</button>
             
-            <div id="loginError" class="alert alert-error hidden" style="margin-top: 16px;"></div>
+            <!-- Welcome back message (shown when returning user) -->
+            <div id="welcomeBackMessage" class="alert alert-info hidden" style="margin-top: 12px;"></div>
+            
+            <!-- Error message -->
+            <div id="loginError" class="alert alert-error hidden" style="margin-top: 12px;"></div>
         </div>
         
         <!-- ======================================== -->
@@ -66,7 +71,7 @@
     </div>
 
     <script type="module">
-        import { db, auth } from './firebase-config.js';
+        import { db } from './firebase-config.js';
         import { 
             collection, 
             doc, 
@@ -106,7 +111,9 @@
         const loginBtn = document.getElementById('loginBtn');
         const pinInput = document.getElementById('pinInput');
         const nameInput = document.getElementById('nameInput');
+        const nameFieldGroup = document.getElementById('nameFieldGroup');
         const loginError = document.getElementById('loginError');
+        const welcomeBackMessage = document.getElementById('welcomeBackMessage');
         const checkinBtn = document.getElementById('checkinBtn');
         const groupsContainer = document.getElementById('groupsContainer');
         const juryNameDisplay = document.getElementById('juryNameDisplay');
@@ -161,6 +168,68 @@
         setInterval(updateSystemStatusAlert, 60000);
         
         // ========================================
+        // HELPER: Check if PIN exists and get name
+        // ========================================
+        async function checkPinExists(pin) {
+            try {
+                const juriesRef = collection(db, 'juries');
+                const q = query(juriesRef, where('pin', '==', pin));
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    return { exists: false, hasName: false, name: null, juryId: null, juryData: null };
+                }
+                
+                const juryDoc = querySnapshot.docs[0];
+                const juryData = juryDoc.data();
+                const hasName = juryData.name && juryData.name !== '';
+                
+                return {
+                    exists: true,
+                    hasName: hasName,
+                    name: juryData.name || null,
+                    juryId: juryDoc.id,
+                    juryData: juryData
+                };
+            } catch (error) {
+                console.error('Error checking PIN:', error);
+                return { exists: false, hasName: false, name: null, juryId: null, juryData: null };
+            }
+        }
+        
+        // ========================================
+        // HELPER: Show/hide name field based on PIN
+        // ========================================
+        async function updateNameFieldVisibility() {
+            const pin = pinInput.value.trim().toUpperCase();
+            if (pin.length >= 4) {
+                const result = await checkPinExists(pin);
+                
+                if (result.exists && result.hasName) {
+                    // Name already exists - hide name field, show welcome message
+                    nameFieldGroup.classList.add('hidden');
+                    welcomeBackMessage.innerHTML = `👋 Welcome back, ${result.name}! Please enter your PIN and click Login.`;
+                    welcomeBackMessage.classList.remove('hidden');
+                } else if (result.exists && !result.hasName) {
+                    // PIN exists but no name - show name field (first time setup)
+                    nameFieldGroup.classList.remove('hidden');
+                    welcomeBackMessage.classList.add('hidden');
+                } else {
+                    // PIN doesn't exist - hide name field, clear welcome message
+                    nameFieldGroup.classList.add('hidden');
+                    welcomeBackMessage.classList.add('hidden');
+                }
+            } else {
+                nameFieldGroup.classList.add('hidden');
+                welcomeBackMessage.classList.add('hidden');
+            }
+        }
+        
+        // Listen to PIN input changes
+        pinInput.addEventListener('input', updateNameFieldVisibility);
+        pinInput.addEventListener('blur', updateNameFieldVisibility);
+        
+        // ========================================
         // HELPER: Render all groups
         // ========================================
         function renderGroups() {
@@ -189,88 +258,89 @@
                 const total = calculateTotal(rawScores);
                 
                 groupCard.innerHTML = `
-    <div class="group-header">
-        <span class="group-number">Group ${group.groupNumber}</span>
-        ${group.isCompleted ? '<span class="badge badge-success">✓ COMPLETED</span>' : '<span class="badge badge-warning">📝 DRAFT</span>'}
-    </div>
-    
-    <!-- Group Details Card -->
-    <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-secondary); border-radius: 12px;">
-        <div style="margin-bottom: 8px;">
-            <strong>👨‍🏫 Main Supervisor:</strong> ${group.mainSV || 'Not assigned'}<br>
-            <strong>👩‍🏫 Co-Supervisor:</strong> ${group.coSV || 'Not assigned'}
-        </div>
-        <details>
-            <summary style="cursor: pointer; font-weight: 500; margin-bottom: 8px;">
-                📋 Team Members (${group.students?.length || 0})
-            </summary>
-            <div style="font-size: 13px; margin-top: 8px; max-height: 200px; overflow-y: auto;">
-                ${group.students?.map(s => `
-                    <div style="padding: 6px 0; border-bottom: 1px solid var(--border);">
-                        <strong>${s.name}</strong><br>
-                        <small>${s.matric} | ${s.program}</small>
+                    <div class="group-header">
+                        <span class="group-number">Group ${group.groupNumber}</span>
+                        ${group.isCompleted ? '<span class="badge badge-success">✓ COMPLETED</span>' : '<span class="badge badge-warning">📝 DRAFT</span>'}
                     </div>
-                `).join('') || 'No students listed'}
-            </div>
-        </details>
-    </div>
-    
-    <div class="slider-group">
-        <div class="slider-label">
-            <span>A1: Prototype Functionality & Execution (Weight: 5)</span>
-            <span class="slider-value" id="a1_val_${group.groupNumber}">${rawScores.a1}</span>
-        </div>
-        <input type="range" id="a1_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a1}" ${group.isCompleted ? 'disabled' : ''}>
-    </div>
-    
-    <div class="slider-group">
-        <div class="slider-label">
-            <span>A2: Commercial Viability & Market Potential (Weight: 4)</span>
-            <span class="slider-value" id="a2_val_${group.groupNumber}">${rawScores.a2}</span>
-        </div>
-        <input type="range" id="a2_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a2}" ${group.isCompleted ? 'disabled' : ''}>
-    </div>
-    
-    <div class="slider-group">
-        <div class="slider-label">
-            <span>A3: Innovation & Problem Solving (Weight: 4)</span>
-            <span class="slider-value" id="a3_val_${group.groupNumber}">${rawScores.a3}</span>
-        </div>
-        <input type="range" id="a3_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a3}" ${group.isCompleted ? 'disabled' : ''}>
-    </div>
-    
-    <div class="slider-group">
-        <div class="slider-label">
-            <span>A4: Pitch & Professional Communication (Weight: 4)</span>
-            <span class="slider-value" id="a4_val_${group.groupNumber}">${rawScores.a4}</span>
-        </div>
-        <input type="range" id="a4_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a4}" ${group.isCompleted ? 'disabled' : ''}>
-    </div>
-    
-    <div class="slider-group">
-        <div class="slider-label">
-            <span>A5: Overall Industry Recommendation (Weight: 3)</span>
-            <span class="slider-value" id="a5_val_${group.groupNumber}">${rawScores.a5}</span>
-        </div>
-        <input type="range" id="a5_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a5}" ${group.isCompleted ? 'disabled' : ''}>
-    </div>
-    
-    <div class="total-score">
-        <div class="label">TOTAL SCORE (OUT OF 100)</div>
-        <div class="value" id="total_${group.groupNumber}">${total}</div>
-    </div>
-    
-    ${!group.isCompleted ? `
-        <div class="action-buttons">
-            <button class="btn btn-secondary" id="saveDraft_${group.groupNumber}">💾 Save Draft</button>
-            <button class="btn btn-success" id="finalSubmit_${group.groupNumber}">✓ Final Submit</button>
-        </div>
-    ` : `
-        <div class="alert alert-success">
-            ✅ Finalized on ${group.savedScore?.submittedAt ? new Date(group.savedScore.submittedAt.toDate()).toLocaleString() : 'Unknown date'}
-        </div>
-    `}
-`;
+                    
+                    <!-- Group Details Card -->
+                    <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-secondary); border-radius: 12px;">
+                        <div style="margin-bottom: 8px;">
+                            <strong>👨‍🏫 Main Supervisor:</strong> ${group.mainSV || 'Not assigned'}<br>
+                            <strong>👩‍🏫 Co-Supervisor:</strong> ${group.coSV || 'Not assigned'}
+                        </div>
+                        <details>
+                            <summary style="cursor: pointer; font-weight: 500; margin-bottom: 8px;">
+                                📋 Team Members (${group.students?.length || 0})
+                            </summary>
+                            <div style="font-size: 13px; margin-top: 8px; max-height: 200px; overflow-y: auto;">
+                                ${group.students?.map(s => `
+                                    <div style="padding: 6px 0; border-bottom: 1px solid var(--border);">
+                                        <strong>${s.name}</strong><br>
+                                        <small>${s.matric} | ${s.program}</small>
+                                    </div>
+                                `).join('') || 'No students listed'}
+                            </div>
+                        </details>
+                    </div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>A1: Prototype Functionality & Execution (Weight: 5)</span>
+                            <span class="slider-value" id="a1_val_${group.groupNumber}">${rawScores.a1}</span>
+                        </div>
+                        <input type="range" id="a1_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a1}" ${group.isCompleted ? 'disabled' : ''}>
+                    </div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>A2: Commercial Viability & Market Potential (Weight: 4)</span>
+                            <span class="slider-value" id="a2_val_${group.groupNumber}">${rawScores.a2}</span>
+                        </div>
+                        <input type="range" id="a2_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a2}" ${group.isCompleted ? 'disabled' : ''}>
+                    </div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>A3: Innovation & Problem Solving (Weight: 4)</span>
+                            <span class="slider-value" id="a3_val_${group.groupNumber}">${rawScores.a3}</span>
+                        </div>
+                        <input type="range" id="a3_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a3}" ${group.isCompleted ? 'disabled' : ''}>
+                    </div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>A4: Pitch & Professional Communication (Weight: 4)</span>
+                            <span class="slider-value" id="a4_val_${group.groupNumber}">${rawScores.a4}</span>
+                        </div>
+                        <input type="range" id="a4_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a4}" ${group.isCompleted ? 'disabled' : ''}>
+                    </div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>A5: Overall Industry Recommendation (Weight: 3)</span>
+                            <span class="slider-value" id="a5_val_${group.groupNumber}">${rawScores.a5}</span>
+                        </div>
+                        <input type="range" id="a5_${group.groupNumber}" min="0" max="5" step="1" value="${rawScores.a5}" ${group.isCompleted ? 'disabled' : ''}>
+                    </div>
+                    
+                    <div class="total-score">
+                        <div class="label">TOTAL SCORE (OUT OF 100)</div>
+                        <div class="value" id="total_${group.groupNumber}">${total}</div>
+                    </div>
+                    
+                    ${!group.isCompleted ? `
+                        <div class="action-buttons">
+                            <button class="btn btn-secondary" id="saveDraft_${group.groupNumber}">💾 Save Draft</button>
+                            <button class="btn btn-success" id="finalSubmit_${group.groupNumber}">✓ Final Submit</button>
+                        </div>
+                    ` : `
+                        <div class="alert alert-success">
+                            ✅ Finalized on ${group.savedScore?.submittedAt ? new Date(group.savedScore.submittedAt.toDate()).toLocaleString() : 'Unknown date'}
+                        </div>
+                    `}
+                `;
+                
                 groupsContainer.appendChild(groupCard);
                 
                 // Attach event listeners if not completed
@@ -373,7 +443,6 @@
             
             if (result.success) {
                 alert(`Group ${groupNumber} submitted successfully!`);
-                // Refresh groups data
                 await loadGroupsData();
                 renderGroups();
             } else {
@@ -382,7 +451,9 @@
         }
         
         async function loadGroupsData() {
-            currentGroupsData = await getJuryAssignedGroups(currentJuryId, currentJuryData);
+            if (currentJuryId && currentJuryData) {
+                currentGroupsData = await getJuryAssignedGroups(currentJuryId, currentJuryData);
+            }
         }
         
         // ========================================
@@ -399,7 +470,6 @@
                 checkinBtn.innerText = '✅ CHECKED IN';
                 checkinBtn.style.opacity = '0.7';
                 
-                // Load groups after check-in
                 await loadGroupsData();
                 renderGroups();
                 updateSystemStatusAlert();
@@ -409,11 +479,10 @@
         }
         
         // ========================================
-        // LOGIN FUNCTION
+        // LOGIN FUNCTION (UPDATED)
         // ========================================
         async function handleLogin() {
             const pin = pinInput.value.trim().toUpperCase();
-            const name = nameInput.value.trim();
             
             if (!pin) {
                 loginError.innerText = 'Please enter your PIN';
@@ -421,43 +490,69 @@
                 return;
             }
             
-            if (!name) {
-                loginError.innerText = 'Please enter your full name';
-                loginError.classList.remove('hidden');
-                return;
-            }
-            
             loginBtn.disabled = true;
             loginBtn.innerText = 'Verifying...';
             loginError.classList.add('hidden');
+            welcomeBackMessage.classList.add('hidden');
             
-            const result = await validateJuryPin(pin);
+            const pinCheck = await checkPinExists(pin);
             
-            if (!result.success) {
-                loginError.innerText = result.error;
+            if (!pinCheck.exists) {
+                loginError.innerText = 'Invalid PIN. Please check and try again.';
                 loginError.classList.remove('hidden');
                 loginBtn.disabled = false;
                 loginBtn.innerText = 'Login to Continue';
                 return;
             }
             
-            // Update jury name in database
-            await updateJuryName(result.juryId, name);
+            // Case 1: PIN exists but has no name (first time login)
+            if (pinCheck.exists && !pinCheck.hasName) {
+                const enteredName = nameInput.value.trim();
+                
+                if (!enteredName) {
+                    loginError.innerText = 'Please enter your full name';
+                    loginError.classList.remove('hidden');
+                    loginBtn.disabled = false;
+                    loginBtn.innerText = 'Login to Continue';
+                    return;
+                }
+                
+                // Save their name
+                await updateJuryName(pinCheck.juryId, enteredName);
+                currentJuryData = { ...pinCheck.juryData, name: enteredName };
+                currentJuryId = pinCheck.juryId;
+                
+                // Show welcome message
+                const welcomeMsg = document.getElementById('welcomeBackMessage');
+                welcomeMsg.innerHTML = `✨ Welcome, ${enteredName}! You are now logged in.`;
+                welcomeMsg.classList.remove('hidden');
+                welcomeMsg.className = 'alert alert-success';
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            // Case 2: PIN exists and has name (returning user)
+            else if (pinCheck.exists && pinCheck.hasName) {
+                currentJuryData = pinCheck.juryData;
+                currentJuryId = pinCheck.juryId;
+                
+                // Show welcome back message
+                welcomeBackMessage.innerHTML = `👋 Welcome back, ${pinCheck.name}!`;
+                welcomeBackMessage.classList.remove('hidden');
+                welcomeBackMessage.className = 'alert alert-success';
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
             
-            currentJuryId = result.juryId;
             currentJuryPin = pin;
-            currentJuryData = result.juryData;
-            currentJuryData.name = name;
             isCheckedIn = currentJuryData.checkedIn || false;
             
             // Update welcome banner
-            juryNameDisplay.innerText = `Welcome, ${name}`;
+            juryNameDisplay.innerText = `Welcome, ${currentJuryData.name}`;
             
             // Switch to marking section
             loginSection.classList.add('hidden');
             markingSection.classList.remove('hidden');
             
-            // If already checked in, load groups immediately
             if (isCheckedIn) {
                 checkinBtn.disabled = true;
                 checkinBtn.innerText = '✅ CHECKED IN';
@@ -469,7 +564,6 @@
             }
             
             updateSystemStatusAlert();
-            
             loginBtn.disabled = false;
             loginBtn.innerText = 'Login to Continue';
         }
@@ -481,11 +575,6 @@
         pinInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
         nameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
         checkinBtn.addEventListener('click', handleCheckIn);
-        
-        // Press Enter on PIN input moves to name
-        pinInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') nameInput.focus();
-        });
         
         // Update dark mode toggle icon
         function updateToggleIcon() {
