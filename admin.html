@@ -957,9 +957,20 @@ setInterval(updateDashboardDateTime, 60000);
         
         document.getElementById('refreshDataBtn').addEventListener('click', () => loadAllData());
         
-        document.getElementById('extendTimeBtn').addEventListener('click', () => {
-            const defaultTime = new Date();
+        document.getElementById('extendTimeBtn').addEventListener('click', async () => {
+            let defaultTime = new Date();
             defaultTime.setHours(defaultTime.getHours() + 2);
+            
+            try {
+                const settingsRef = doc(db, 'settings', 'current');
+                const settingsDoc = await getDoc(settingsRef);
+                if (settingsDoc.exists() && settingsDoc.data().judgingEndTime) {
+                    defaultTime = settingsDoc.data().judgingEndTime.toDate();
+                }
+            } catch (e) {
+                console.error('Error reading settings:', e);
+            }
+            
             document.getElementById('newEndTime').value = defaultTime.toISOString().slice(0, 16);
             document.getElementById('extendTimeModal').style.display = 'flex';
         });
