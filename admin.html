@@ -979,7 +979,17 @@ setInterval(updateDashboardDateTime, 60000);
         });
         
         document.getElementById('confirmExtendBtn').addEventListener('click', async () => {
-            const newTime = Timestamp.fromDate(new Date(document.getElementById('newEndTime').value));
+            const rawValue = document.getElementById('newEndTime').value;
+            if (!rawValue) {
+                alert('Please select a date and time.');
+                return;
+            }
+            const dateObj = new Date(rawValue);
+            if (isNaN(dateObj.getTime())) {
+                alert('Invalid date selected.');
+                return;
+            }
+            const newTime = Timestamp.fromDate(dateObj);
             const result = await extendJudgingTime(newTime, 'Admin');
             if (result.success) {
                 document.getElementById('extendTimeModal').style.display = 'none';

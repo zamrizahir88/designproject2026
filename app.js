@@ -658,6 +658,9 @@ export async function overrideGroupScore(groupNumber, newScore, reason, adminNam
 
 // Extend judging time (admin)
 export async function extendJudgingTime(newEndTime, adminName) {
+  if (!newEndTime || typeof newEndTime.toDate !== 'function') {
+    return { success: false, error: 'Invalid timestamp provided' };
+  }
   try {
     const settingsRef = doc(db, 'settings', 'current');
     await setDoc(settingsRef, {
@@ -665,7 +668,12 @@ export async function extendJudgingTime(newEndTime, adminName) {
       lastModifiedBy: adminName,
       lastModifiedAt: Timestamp.now()
     }, { merge: true });
-    
+  } catch (error) {
+    console.error('Error extending time:', error);
+    return { success: false, error: error.message || 'Failed to extend time' };
+  }
+  
+  try {
     await addDoc(collection(db, 'audit_logs'), {
       action: 'EXTEND_TIME',
       adminName: adminName,
@@ -673,12 +681,11 @@ export async function extendJudgingTime(newEndTime, adminName) {
       newValue: newEndTime.toDate().toString(),
       timestamp: Timestamp.now()
     });
-    
-    return { success: true };
   } catch (error) {
-    console.error('Error extending time:', error);
-    return { success: false, error: 'Failed to extend time' };
+    console.error('Error writing audit log:', error);
   }
+  
+  return { success: true };
 }
 
 // Reopen or close judging system (admin)
@@ -702,7 +709,7 @@ export async function setJudgingOpen(isOpen, adminName) {
     return { success: true };
   } catch (error) {
     console.error('Error changing system state:', error);
-    return { success: false, error: 'Failed to change state' };
+    return { success: false, error: error.message || 'Failed to change state' };
   }
 }
 
