@@ -114,6 +114,65 @@
         .attention-item { padding: 10px; margin-bottom: 8px; border-radius: 10px; background: var(--bg-secondary); }
         .attention-zero { border-left: 4px solid #ef233c; }
         .attention-one { border-left: 4px solid #ffb703; }
+        .attention-completed { border-left: 4px solid #06d6a0; }
+        
+        /* Smart Reassign */
+        .reassign-group-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+            background: var(--bg-card);
+        }
+        .reassign-group-item .group-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .reassign-group-item .group-number {
+            font-weight: 700;
+        }
+        .reassign-group-item .group-title {
+            font-size: 11px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .reassign-remove-btn {
+            padding: 4px 10px;
+            font-size: 11px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            background: #ef233c;
+            color: white;
+            margin-left: 8px;
+            white-space: nowrap;
+        }
+        .reassign-add-btn {
+            padding: 4px 10px;
+            font-size: 11px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            background: #06d6a0;
+            color: white;
+            margin-left: 8px;
+            white-space: nowrap;
+        }
+        .reassign-completed-badge {
+            display: inline-block;
+            background: #06d6a0;
+            color: white;
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 10px;
+            margin-left: 6px;
+        }
         
         /* Buttons */
         .btn-small-icon { padding: 6px 10px; font-size: 12px; margin: 0 2px; }
@@ -216,6 +275,10 @@
 	            
             <div class="swipe-hint">👈 Swipe left/right on tabs to navigate 👉</div>
             
+            <div style="text-align: right; margin-bottom: 4px;">
+                <button id="globalRefreshBtn" class="btn btn-sm btn-outline" style="width: auto; display: inline-block; padding: 6px 16px;">🔄 Refresh All Data</button>
+            </div>
+            
             <!-- Tab Bar -->
             <div class="tab-bar" id="tabBar">
                 <button class="tab active" data-tab="live">📊 LIVE</button>
@@ -243,13 +306,13 @@
                 </div>
                 
                 <div class="card">
-                    <h3>⚠️ Attention Required</h3>
-                    <div id="attentionGroups">Loading...</div>
+                    <h3>📋 Detail Evaluation Status</h3>
+                    <div id="attentionGroups" style="max-height: 40vh; overflow-y: auto;">Loading...</div>
                 </div>
                 
                 <div class="card">
                     <h3>👥 Jury Progress</h3>
-                    <div class="table-container">
+                    <div class="sticky-table-container" style="max-height: 50vh;">
                         <table class="status-table">
                             <thead><tr><th>Jury Name</th><th>PIN</th><th>Checked</th><th>Assigned</th><th>Completed</th><th>Progress</th><th>Action</th></tr></thead>
                             <tbody id="juryTableBody"><tr><td colspan="7">Loading...</td></tr></tbody>
@@ -310,6 +373,15 @@
             <!-- ======================================== -->
             <div id="tab-admin" class="tab-content">
                 
+                <!-- Quick Actions -->
+                <div class="card">
+                    <h3>⚡ Quick Actions</h3>
+                    <div class="button-group">
+                        <button id="extendTimeBtn" class="btn btn-warning">⏰ Extend Time</button>
+                        <button id="toggleSystemBtn" class="btn btn-danger">🔒 Close System</button>
+                    </div>
+                </div>
+                
                 <!-- Create New Jury -->
                 <div class="card">
                     <h3>➕ Create New Jury</h3>
@@ -335,7 +407,7 @@
                 <!-- Jury Management Table -->
                 <div class="card">
                     <h3>👥 Manage Existing Juries</h3>
-                    <div id="juryManagementContainer">Loading juries...</div>
+                    <div id="juryManagementContainer" style="max-height: 55vh; overflow-y: auto;">Loading juries...</div>
                 </div>
                 
                 <!-- Reassign Groups -->
@@ -343,29 +415,26 @@
                     <h3>📋 Reassign Groups to Existing Jury</h3>
                     <div class="form-group">
                         <label>Select Jury</label>
-                        <select id="reassignJurySelect"><option>Loading juries...</option></select>
+                        <select id="reassignJurySelect"><option value="">Select Jury</option></select>
                     </div>
-                    <div class="form-group">
-                        <label>Assign Groups</label>
-                        <select id="reassignGroupsSelect" multiple size="5"></select>
+                    <div id="reassignPanel" class="hidden" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 250px; border: 1px solid var(--border); border-radius: 12px; padding: 12px;">
+                            <h4 style="margin: 0 0 8px 0; font-size: 14px;">📌 Currently Assigned</h4>
+                            <div id="assignedGroupList" style="max-height: 300px; overflow-y: auto;">No groups assigned.</div>
+                        </div>
+                        <div style="flex: 1; min-width: 250px; border: 1px solid var(--border); border-radius: 12px; padding: 12px;">
+                            <h4 style="margin: 0 0 8px 0; font-size: 14px;">➕ Available Groups</h4>
+                            <div id="availableGroupList" style="max-height: 300px; overflow-y: auto;">Loading...</div>
+                        </div>
                     </div>
-                    <button id="reassignGroupsBtn" class="btn btn-primary">Save Assignment</button>
-                </div>
-                
-                <!-- Quick Actions -->
-                <div class="card">
-                    <h3>⚡ Quick Actions</h3>
-                    <div class="button-group">
-                        <button id="extendTimeBtn" class="btn btn-warning">⏰ Extend Time</button>
-                        <button id="toggleSystemBtn" class="btn btn-danger">🔒 Close System</button>
-                        <button id="refreshDataBtn" class="btn btn-secondary">🔄 Refresh Data</button>
-                    </div>
+                    <button id="saveReassignBtn" class="btn btn-primary hidden" style="margin-top: 12px;">💾 Save Changes</button>
+                    <div id="reassignStatus" class="alert hidden" style="margin-top: 12px;"></div>
                 </div>
                 
                 <!-- Audit Logs -->
                 <div class="card">
                     <h3>📜 Audit Logs</h3>
-                    <div class="table-container">
+                    <div class="sticky-table-container" style="max-height: 40vh;">
                         <table class="status-table">
                             <thead><tr><th>Time</th><th>Action</th><th>Target</th><th>Details</th></tr></thead>
                             <tbody id="auditTableBody"><tr><td colspan="4">Loading...</td></tr></tbody>
@@ -634,7 +703,7 @@ setInterval(updateDashboardDateTime, 60000);
             const juries = await getAllJuries();
             const scores = await getAllScores();
             
-            let html = '<div class="table-container"><table class="status-table"><thead><tr><th>Group</th><th>Project</th><th>Assigned Juries</th><th>Status</th><th>Scores</th></tr></thead><tbody>';
+            let html = '<div class="sticky-table-container"><table class="status-table"><thead><tr><th>Group</th><th>Project</th><th>Assigned Juries</th><th>Status</th><th>Scores</th></tr></thead><tbody>';
             
             for (const group of groups) {
                 const assignedJuries = juries.filter(j => j.assignedGroups?.includes(group.number));
@@ -698,10 +767,14 @@ setInterval(updateDashboardDateTime, 60000);
             const groups = await getAllGroups();
             const activeGroups = evaluationStatuses.filter(s => s.status === 'active').map(s => s.groupNumber);
             const notStartedGroups = groups.filter(g => !evaluationStatuses.some(s => s.groupNumber === g.number)).map(g => g.number);
+            const completedGroups = new Set();
+            evaluationStatuses.forEach(s => { if (s.status === 'completed') completedGroups.add(s.groupNumber); });
+            const completedList = [...completedGroups].sort((a,b) => a-b);
             
             document.getElementById('attentionGroups').innerHTML = `
                 <div class="attention-item attention-zero"><strong>🔴 Not started:</strong> ${notStartedGroups.length > 0 ? notStartedGroups.join(', ') : 'None ✅'}</div>
                 <div class="attention-item attention-one"><strong>🟡 Active now:</strong> ${activeGroups.length > 0 ? activeGroups.join(', ') : 'None'}</div>
+                <div class="attention-item attention-completed"><strong>✅ Completed:</strong> ${completedList.length > 0 ? completedList.join(', ') : 'None'}</div>
             `;
         }
         
@@ -743,17 +816,22 @@ setInterval(updateDashboardDateTime, 60000);
                 return;
             }
             
+            const juryUrl = `${window.location.origin}${window.location.pathname.replace('admin.html', 'jury.html')}`;
+            
             let html = '';
             for (const jury of juries) {
                 const assignedGroupNumbers = jury.assignedGroups || [];
                 const completedCount = jury.completedGroups?.length || 0;
                 const totalCount = assignedGroupNumbers.length;
+                const phone = jury.phone || '';
+                const whatsappLink = phone ? `https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(jury.name || '')}%2C%0A%0AYour%20PIN%20is%3A%20*${jury.pin}*%0A%0ALogin%20here%3A%0A${encodeURIComponent(juryUrl)}%0A%0AThank%20you.` : '#';
                 html += `
                     <div class="jury-row">
                         <div class="jury-row-header" onclick="this.nextElementSibling.classList.toggle('expanded')">
                             <div><strong>${jury.name || 'Unnamed'}</strong> <span style="font-size:12px">(${jury.pin})</span></div>
                             <div>
                                 ${completedCount}/${totalCount} completed
+                                ${phone ? `<a href="${whatsappLink}" target="_blank" class="btn btn-sm btn-success btn-small-icon" onclick="event.stopPropagation()" style="text-decoration:none;">📱 WhatsApp</a>` : ''}
                                 <button class="btn btn-sm btn-primary btn-small-icon" onclick="event.stopPropagation(); window.editJuryDetails('${jury.id}', '${(jury.name || '').replace(/'/g, "\\'")}', '${(jury.phone || '').replace(/'/g, "\\'")}')">✏️ Edit</button>
                                 <button class="btn btn-sm btn-danger btn-small-icon" onclick="event.stopPropagation(); window.deleteJury('${jury.id}', '${(jury.name || 'Unnamed').replace(/'/g, "\\'")}')">🗑️ Delete</button>
                             </div>
@@ -817,30 +895,145 @@ setInterval(updateDashboardDateTime, 60000);
             }
         };
         
+        let reassignAllGroups = [];
+        let reassignAllJuries = [];
+        let reassignDraft = { assigned: [], available: [] }; // { groupNumber: { ...groupData, isCompleted: bool } }
+        
         async function loadReassignDropdowns() {
             const juries = await getAllJuries();
             const groups = await getAllGroups();
+            reassignAllJuries = juries;
+            reassignAllGroups = groups;
             const jurySelect = document.getElementById('reassignJurySelect');
             jurySelect.innerHTML = '<option value="">Select Jury</option>' + juries.map(j => `<option value="${j.id}">${j.name || 'Unnamed'} (${j.pin})</option>`).join('');
-            const groupSelect = document.getElementById('reassignGroupsSelect');
-            groupSelect.innerHTML = groups.map(g => `<option value="${g.number}">Group ${g.number} - ${g.projectTitle || ''}</option>`).join('');
         }
         
-        document.getElementById('reassignGroupsBtn').addEventListener('click', async () => {
+        document.getElementById('reassignJurySelect').addEventListener('change', async () => {
             const juryId = document.getElementById('reassignJurySelect').value;
-            const selected = Array.from(document.getElementById('reassignGroupsSelect').selectedOptions).map(opt => parseInt(opt.value));
-            if (!juryId) { alert('Please select a jury'); return; }
-            if (selected.length === 0) { alert('Please select at least one group'); return; }
+            const panel = document.getElementById('reassignPanel');
+            const saveBtn = document.getElementById('saveReassignBtn');
+            if (!juryId) {
+                panel.classList.add('hidden');
+                saveBtn.classList.add('hidden');
+                return;
+            }
+            
+            const jury = reassignAllJuries.find(j => j.id === juryId);
+            if (!jury) { panel.classList.add('hidden'); return; }
+            
+            const assignedGroups = jury.assignedGroups || [];
+            const completedGroups = jury.completedGroups || [];
+            
+            // Build draft state
+            reassignDraft.assigned = [];
+            reassignDraft.available = [];
+            
+            // Assigned list
+            let assignedHtml = '';
+            for (const groupNum of assignedGroups) {
+                const group = reassignAllGroups.find(g => g.number === groupNum);
+                const isCompleted = completedGroups.includes(groupNum);
+                reassignDraft.assigned.push({ number: groupNum, projectTitle: group?.projectTitle || '', isCompleted });
+                assignedHtml += `
+                    <div class="reassign-group-item">
+                        <div class="group-info">
+                            <span class="group-number">Group ${groupNum}</span>
+                            <span class="group-title">${group?.projectTitle || '-'}</span>
+                            ${isCompleted ? '<span class="reassign-completed-badge">✅ marked</span>' : ''}
+                        </div>
+                        <button class="reassign-remove-btn" onclick="window.reassignRemove(${groupNum})">✕ Remove</button>
+                    </div>`;
+            }
+            document.getElementById('assignedGroupList').innerHTML = assignedHtml || 'No groups assigned.';
+            
+            // Available list (groups NOT assigned)
+            let availableHtml = '';
+            for (const group of reassignAllGroups) {
+                if (!assignedGroups.includes(group.number)) {
+                    reassignDraft.available.push({ number: group.number, projectTitle: group.projectTitle || '', isCompleted: false });
+                    availableHtml += `
+                        <div class="reassign-group-item">
+                            <div class="group-info">
+                                <span class="group-number">Group ${group.number}</span>
+                                <span class="group-title">${group.projectTitle || '-'}</span>
+                            </div>
+                            <button class="reassign-add-btn" onclick="window.reassignAdd(${group.number})">+ Add</button>
+                        </div>`;
+                }
+            }
+            document.getElementById('availableGroupList').innerHTML = availableHtml || 'All groups assigned.';
+            
+            panel.classList.remove('hidden');
+            saveBtn.classList.add('hidden');
+            document.getElementById('reassignStatus').classList.add('hidden');
+        });
+        
+        window.reassignRemove = (groupNum) => {
+            const item = reassignDraft.assigned.find(g => g.number === groupNum);
+            if (item) {
+                reassignDraft.assigned = reassignDraft.assigned.filter(g => g.number !== groupNum);
+                reassignDraft.available.push(item);
+            }
+            window.reassignRenderLists();
+            document.getElementById('saveReassignBtn').classList.remove('hidden');
+        };
+        
+        window.reassignAdd = (groupNum) => {
+            const item = reassignDraft.available.find(g => g.number === groupNum);
+            if (item) {
+                reassignDraft.available = reassignDraft.available.filter(g => g.number !== groupNum);
+                reassignDraft.assigned.push(item);
+            }
+            window.reassignRenderLists();
+            document.getElementById('saveReassignBtn').classList.remove('hidden');
+        };
+        
+        window.reassignRenderLists = () => {
+            let assignedHtml = '';
+            for (const g of reassignDraft.assigned) {
+                assignedHtml += `
+                    <div class="reassign-group-item">
+                        <div class="group-info">
+                            <span class="group-number">Group ${g.number}</span>
+                            <span class="group-title">${g.projectTitle || '-'}</span>
+                            ${g.isCompleted ? '<span class="reassign-completed-badge">✅ marked</span>' : ''}
+                        </div>
+                        <button class="reassign-remove-btn" onclick="window.reassignRemove(${g.number})">✕ Remove</button>
+                    </div>`;
+            }
+            document.getElementById('assignedGroupList').innerHTML = assignedHtml || 'No groups assigned.';
+            
+            let availableHtml = '';
+            for (const g of reassignDraft.available) {
+                availableHtml += `
+                    <div class="reassign-group-item">
+                        <div class="group-info">
+                            <span class="group-number">Group ${g.number}</span>
+                            <span class="group-title">${g.projectTitle || '-'}</span>
+                        </div>
+                        <button class="reassign-add-btn" onclick="window.reassignAdd(${g.number})">+ Add</button>
+                    </div>`;
+            }
+            document.getElementById('availableGroupList').innerHTML = availableHtml || 'All groups assigned.';
+        };
+        
+        document.getElementById('saveReassignBtn').addEventListener('click', async () => {
+            const juryId = document.getElementById('reassignJurySelect').value;
+            if (!juryId) return;
+            const newAssigned = reassignDraft.assigned.map(g => g.number);
+            const keptCompleted = reassignDraft.assigned.filter(g => g.isCompleted).map(g => g.number);
+            
             try {
-                const juryDoc = await getDoc(doc(db, 'juries', juryId));
-                const juryData = juryDoc.data();
-                const oldCompleted = juryData.completedGroups || [];
-                const newCompleted = oldCompleted.filter(g => selected.includes(g));
-                await updateDoc(doc(db, 'juries', juryId), { 
-                    assignedGroups: selected,
-                    completedGroups: newCompleted
+                await updateDoc(doc(db, 'juries', juryId), {
+                    assignedGroups: newAssigned,
+                    completedGroups: keptCompleted
                 });
-                alert('✅ Groups reassigned successfully');
+                document.getElementById('saveReassignBtn').classList.add('hidden');
+                const status = document.getElementById('reassignStatus');
+                status.className = 'alert alert-success';
+                status.innerHTML = '✅ Groups reassigned successfully!';
+                status.classList.remove('hidden');
+                setTimeout(() => status.classList.add('hidden'), 3000);
                 loadAllData();
             } catch (error) {
                 alert('❌ Error: ' + error.message);
@@ -955,7 +1148,7 @@ setInterval(updateDashboardDateTime, 60000);
             exportToCSV(averages, []);
         });
         
-        document.getElementById('refreshDataBtn').addEventListener('click', () => loadAllData());
+        document.getElementById('globalRefreshBtn').addEventListener('click', () => loadAllData());
         
         document.getElementById('extendTimeBtn').addEventListener('click', async () => {
             let defaultTime = new Date();
