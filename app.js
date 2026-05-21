@@ -664,6 +664,7 @@ export async function extendJudgingTime(newEndTime, adminName) {
   try {
     const settingsRef = doc(db, 'settings', 'current');
     await setDoc(settingsRef, {
+      isOpen: true,
       judgingEndTime: newEndTime,
       lastModifiedBy: adminName,
       lastModifiedAt: Timestamp.now()

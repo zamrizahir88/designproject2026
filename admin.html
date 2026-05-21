@@ -433,9 +433,8 @@ setInterval(updateDashboardDateTime, 60000);
     if (isAdminAuthenticated()) { 
         document.getElementById('authCard').style.display = 'none';
         document.getElementById('dashboardContent').classList.remove('hidden'); 
-        updateDashboardDateTime();  // ← ADD THIS LINE
+        updateDashboardDateTime();
         loadAllData(); 
-        startAutoRefresh(); 
     } 
 }
         
@@ -971,7 +970,7 @@ setInterval(updateDashboardDateTime, 60000);
                 const docSnap = await getDoc(settingsRef);
                 const newState = !docSnap.data()?.isOpen;
                 const result = await setJudgingOpen(newState, 'Admin');
-                if (result.success) { loadAllData(); }
+                if (result.success) { await loadAllData(); }
                 else { alert('Failed to change system state: ' + result.error); }
             } catch (error) {
                 alert('Error: ' + error.message);
@@ -992,8 +991,9 @@ setInterval(updateDashboardDateTime, 60000);
             const newTime = Timestamp.fromDate(dateObj);
             const result = await extendJudgingTime(newTime, 'Admin');
             if (result.success) {
+                await setJudgingOpen(true, 'Admin');
                 document.getElementById('extendTimeModal').style.display = 'none';
-                loadAllData();
+                await loadAllData();
             } else {
                 alert('Failed to extend time: ' + (result.error || 'Unknown error'));
             }
@@ -1029,20 +1029,6 @@ setInterval(updateDashboardDateTime, 60000);
             document.getElementById('overrideReason').value = '';
             document.getElementById('overrideModal').style.display = 'flex';
         };
-        
-        let refreshInterval;
-        function startAutoRefresh() {
-            if (refreshInterval) clearInterval(refreshInterval);
-            refreshInterval = setInterval(() => {
-                if (isAdminAuthenticated()) {
-                    loadEvaluationStatus();
-                    loadPanelView();
-                    loadAttentionGroups();
-                    loadJuryTable();
-                    loadJuryManagement();
-                }
-            }, 10000);
-        }
         
         function updateToggleIcon() {
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
