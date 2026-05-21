@@ -579,18 +579,6 @@
                     5: "Excellent - Exceptional presentation skills with compelling storytelling."
                 }
             },
-            a4: {
-                title: "A4: Pitch & Professional Communication",
-                weight: 4,
-                description: {
-                    0: "Not Available - Team cannot clearly explain the project or answer basic questions from the panel.",
-                    1: "Very Poor - Relies heavily on reading the poster; struggles to answer industry or technical questions.",
-                    2: "Poor - Covers the basics but lacks persuasive energy; answers questions adequately.",
-                    3: "Average - Confident, engaging pitch; effectively uses the prototype; defends design decisions well.",
-                    4: "Good - Highly persuasive, entrepreneurial pitch; confidently defends product value to experts.",
-                    5: "Excellent - Exceptional presentation skills with compelling storytelling."
-                }
-            },
             a5: {
                 title: "A5: Overall Industry Recommendation",
                 weight: 3,
@@ -605,20 +593,6 @@
             }
         };
         
-        // Fix A4 duplicate - correct A4
-        RUBRIC_DATA.a4 = {
-            title: "A4: Pitch & Professional Communication",
-            weight: 4,
-            description: {
-                0: "Not Available - Team cannot clearly explain the project or answer basic questions from the panel.",
-                1: "Very Poor - Relies heavily on reading the poster; struggles to answer industry or technical questions.",
-                2: "Poor - Covers the basics but lacks persuasive energy; answers questions adequately.",
-                3: "Average - Confident, engaging pitch; effectively uses the prototype; defends design decisions well.",
-                4: "Good - Highly persuasive, entrepreneurial pitch; confidently defends product value to experts.",
-                5: "Excellent - Exceptional presentation skills with compelling storytelling."
-            }
-        };
-        
         // State variables
         let currentJuryId = null;
         let currentJuryPin = null;
@@ -629,6 +603,7 @@
         let activeRubricCriterion = null;
         let activeEvaluationGroup = null; // Track which group is currently being evaluated
         let pendingStartGroup = null;
+        let systemStatusInterval = null;
         
         // DOM Elements
         const loginSection = document.getElementById('loginSection');
@@ -711,7 +686,7 @@
             activeEvaluationGroup = groupNumber;
             
             // Refresh the current group view to enable rubric
-            renderGroupContent();
+            await renderGroupContent();
             
             // Update tab bar to show active status
             renderTabs();
@@ -729,9 +704,9 @@
                     const settings = settingsDoc.data();
                     return { isOpen: settings.isOpen, endTime: settings.judgingEndTime };
                 }
-                return { isOpen: true, endTime: null };
+                return { isOpen: false, endTime: null };
             } catch (error) {
-                return { isOpen: true, endTime: null };
+                return { isOpen: false, endTime: null };
             }
         }
         
@@ -759,7 +734,7 @@
             }
         }
         
-        setInterval(updateSystemStatusAlert, 60000);
+        systemStatusInterval = setInterval(updateSystemStatusAlert, 60000);
         
         async function checkPinExists(pin) {
             try {
@@ -881,37 +856,50 @@
             }
         }
         
-        async function finalSubmit(groupNumber) {
-            const status = await isJudgingOpen();
-            if (!status.isOpen) {
-                alert('Judging is currently closed. Cannot submit final scores.');
-                return;
+
+	async function finalSubmit(groupNumber) {
+    const status = await isJudgingOpen();
+    if (!status.isOpen) {
+        alert('Judging is currently closed. Cannot submit final scores.');
+        return;
+    }
+    if (status.endTime && new Date() > status.endTime.toDate()) {
+        alert('Judging time has ended. Cannot submit final scores.');
+        return;
+    }
+    if (!confirm(`Submit final score for Group ${groupNumber}? You can still edit until system closes.`)) return;
+    
+    const rawScores = getCurrentRawScores(groupNumber);
+    const total = calculateTotal(rawScores);
+    const result = await submitFinalScore(currentJuryPin, currentJuryData.name, groupNumber, rawScores, total);
+    
+    if (result.success) {
+        // Update evaluation status to completed
+        await updateEvaluationStatus(groupNumber, 'completed');
+        
+        // *** ADD THESE LINES - Update local jury data ***
+        if (currentJuryData.completedGroups) {
+            if (!currentJuryData.completedGroups.includes(groupNumber)) {
+                currentJuryData.completedGroups.push(groupNumber);
             }
-            if (status.endTime && new Date() > status.endTime.toDate()) {
-                alert('Judging time has ended. Cannot submit final scores.');
-                return;
-            }
-            if (!confirm(`Submit final score for Group ${groupNumber}? You can still edit until system closes.`)) return;
-            
-            const rawScores = getCurrentRawScores(groupNumber);
-            const total = calculateTotal(rawScores);
-            const result = await submitFinalScore(currentJuryPin, currentJuryData.name, groupNumber, rawScores, total);
-            
-            if (result.success) {
-                // Update evaluation status to completed
-                await updateEvaluationStatus(groupNumber, 'completed');
-                if (activeEvaluationGroup === groupNumber) {
-                    activeEvaluationGroup = null;
-                }
-                alert(`Group ${groupNumber} submitted successfully!`);
-                await loadGroupsData();
-                renderTabs();
-                await renderGroupContent();
-                updateProgress();
-            } else {
-                alert(`Error: ${result.error}`);
-            }
+        } else {
+            currentJuryData.completedGroups = [groupNumber];
         }
+        // *** END OF ADDED LINES ***
+        
+        if (activeEvaluationGroup === groupNumber) {
+            activeEvaluationGroup = null;
+        }
+        alert(`Group ${groupNumber} submitted successfully!`);
+        await loadGroupsData();
+        renderTabs();
+        await renderGroupContent();
+        updateProgress();
+    } else {
+        alert(`Error: ${result.error}`);
+    }
+}
+        
         
         function toggleRubric(criterionId, groupNumber) {
             const rubricId = `rubric_${criterionId}_${groupNumber}`;
@@ -1021,6 +1009,7 @@
                 `;
             });
             
+            // Build action buttons based on state
             let actionButtonsHtml = '';
             if (!isCompleted) {
                 if (isActive) {
@@ -1030,11 +1019,8 @@
                             <button class="btn btn-success" id="finalSubmit_${groupNumber}">✓ Final Submit</button>
                         </div>
                     `;
-                } else {
-                    actionButtonsHtml = `
-                        <button class="start-evaluating-btn" id="startEval_${groupNumber}">🎬 START EVALUATING</button>
-                    `;
                 }
+                // NOT STARTED state - button will be placed at TOP (see HTML structure below)
             } else {
                 actionButtonsHtml = `
                     <div class="alert alert-success">
@@ -1047,14 +1033,16 @@
                 `;
             }
             
+            // Build the HTML - START EVALUATING BUTTON MOVED TO TOP (below team members)
             groupContentContainer.innerHTML = `
                 <div class="group-info">
                     <div class="group-title">Group ${group.groupNumber}</div>
+                    <div class="group-sv" style="font-size: 16px; font-weight: 600; color: var(--accent); margin-bottom: 8px;">📋 ${group.projectTitle || 'No project title'}</div>
                     <div class="group-sv"><strong>👨‍🏫 Main Supervisor:</strong> ${group.mainSV || 'Not assigned'}</div>
                     <div class="group-sv"><strong>👩‍🏫 Co-Supervisor:</strong> ${group.coSV || 'Not assigned'}</div>
                 </div>
                 ${studentsHtml}
-                ${!isActive && !isCompleted ? `<div class="disabled-message">⚠️ Click "Start Evaluating" to enable rubric and begin marking this group.</div>` : ''}
+                ${(!isActive && !isCompleted) ? `<button class="start-evaluating-btn" id="startEval_${groupNumber}">🎬 START EVALUATING</button>` : ''}
                 ${rubricsHtml}
                 <div class="total-score">
                     <div class="label">TOTAL SCORE (OUT OF 100)</div>
@@ -1124,6 +1112,7 @@
                 
                 groupsData.push({
                     groupNumber: groupNum,
+                    projectTitle: groupDetails.projectTitle || '',
                     mainSV: groupDetails.mainSV || 'Not assigned',
                     coSV: groupDetails.coSV || 'Not assigned',
                     students: groupDetails.students || [],
@@ -1147,6 +1136,10 @@
                 checkinBtn.innerText = '✅ CHECKED IN';
                 checkinBtn.style.opacity = '0.7';
                 await loadGroupsData();
+                if (currentGroupsData.length === 0) {
+                    groupContentContainer.innerHTML = '<div class="card"><div class="alert alert-warning"><strong>No groups assigned.</strong> You have no groups to evaluate. Please contact the exhibition administrator.</div></div>';
+                    return;
+                }
                 renderTabs();
                 await renderGroupContent();
                 updateSystemStatusAlert();
@@ -1221,6 +1214,7 @@
                 groupContentContainer.innerHTML = '<div class="card"><p class="text-center">Please click CHECK IN to start evaluating.</p></div>';
             }
             
+            if (systemStatusInterval) { clearInterval(systemStatusInterval); systemStatusInterval = null; }
             updateSystemStatusAlert();
             loginBtn.disabled = false;
             loginBtn.innerText = 'Login to Continue';

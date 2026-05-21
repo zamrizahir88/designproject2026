@@ -187,8 +187,7 @@ export async function juryCheckIn(juryId, juryName) {
     const juryRef = doc(db, 'juries', juryId);
     await updateDoc(juryRef, {
       checkedIn: true,
-      checkInTime: Timestamp.now(),
-      name: juryName
+      checkInTime: Timestamp.now()
     });
     
     // Add audit log
@@ -561,6 +560,20 @@ export async function updateGroupRanks() {
       lastUpdated: Timestamp.now()
     });
   }
+
+  const allGroups = await getAllGroups();
+  const updatedGroupNumbers = new Set(averages.map(a => a.groupNumber));
+  for (const group of allGroups) {
+    if (!updatedGroupNumbers.has(group.number)) {
+      const groupRef = doc(db, 'groups', group.number.toString());
+      batch.update(groupRef, {
+        finalAverage: 0,
+        rank: 0,
+        juryCount: 0,
+        lastUpdated: Timestamp.now()
+      });
+    }
+  }
   
   await batch.commit();
   return averages;
@@ -696,12 +709,13 @@ export async function setJudgingOpen(isOpen, adminName) {
 // Export to CSV
 export function exportToCSV(groups, scores) {
   const rows = [];
-  rows.push(['Rank', 'Group Number', 'Final Average', 'Jury Count', 'A1 Avg', 'A2 Avg', 'A3 Avg', 'A4 Avg', 'A5 Avg']);
+  rows.push(['Rank', 'Group Number', 'Project Title', 'Final Average', 'Jury Count', 'A1 Avg', 'A2 Avg', 'A3 Avg', 'A4 Avg', 'A5 Avg']);
   
   groups.forEach(group => {
     rows.push([
       group.rank,
       group.groupNumber,
+      group.projectTitle || '',
       group.finalAverage.toFixed(2),
       group.juryCount || 0,
       group.a1_avg?.toFixed(2) || '0',
@@ -712,12 +726,12 @@ export function exportToCSV(groups, scores) {
     ]);
   });
   
-  const csvContent = rows.map(row => row.join(',')).join('\n');
+  const csvContent = rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
   const blob = new Blob([csvContent], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `jury_ranking_${new Date().toISOString().slice(0,19)}.csv`;
+  a.download = `jury_ranking_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

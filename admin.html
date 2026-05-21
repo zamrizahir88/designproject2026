@@ -501,6 +501,9 @@ setInterval(updateDashboardDateTime, 60000);
                         <p><strong>Status:</strong> ${settings.isOpen ? '🟢 OPEN' : '🔴 CLOSED'} | <strong>Ends:</strong> ${settings.judgingEndTime?.toDate().toLocaleString() || 'Not set'}</p>
                     `;
                     document.getElementById('toggleSystemBtn').innerText = settings.isOpen ? '🔒 Close System' : '🔓 Open System';
+                } else {
+                    document.getElementById('systemStatus').innerHTML = '<p>⚠️ System not yet configured. Use the ADMIN tab to set up judging parameters.</p>';
+                    document.getElementById('toggleSystemBtn').innerText = '🔓 Open System';
                 }
             } catch (error) {
                 document.getElementById('systemStatus').innerHTML = '<p>❌ Error loading status</p>';
@@ -579,6 +582,16 @@ setInterval(updateDashboardDateTime, 60000);
                 `;
                 
                 document.getElementById('activeEvaluations').innerText = activeList.length;
+                document.getElementById('totalGroups').innerText = groups.length;
+                
+                let fullyMarkedCount = 0;
+                for (const group of groups) {
+                    const assignedJuries = juries.filter(j => (j.assignedGroups || []).includes(group.number));
+                    if (assignedJuries.length === 0) continue;
+                    const allDone = assignedJuries.every(j => (j.completedGroups || []).includes(group.number));
+                    if (allDone) fullyMarkedCount++;
+                }
+                document.getElementById('completedGroups').innerText = fullyMarkedCount;
                 
             } catch (error) {
                 console.error('Error loading evaluation status:', error);
@@ -628,8 +641,13 @@ setInterval(updateDashboardDateTime, 60000);
                 const assignedJuries = juries.filter(j => j.assignedGroups?.includes(group.number));
                 let assignedHtml = '';
                 let scoresHtml = '';
-                let allCompleted = true;
+                let allCompleted = assignedJuries.length > 0;
                 let anyActive = false;
+                
+                if (assignedJuries.length === 0) {
+                    assignedHtml = '<span style="color: #ffb703; font-weight: 600;">⚠️ No jury assigned</span>';
+                    allCompleted = false;
+                }
                 
                 for (const jury of assignedJuries) {
                     const isCompleted = jury.completedGroups?.includes(group.number);
@@ -737,7 +755,7 @@ setInterval(updateDashboardDateTime, 60000);
                             <div><strong>${jury.name || 'Unnamed'}</strong> <span style="font-size:12px">(${jury.pin})</span></div>
                             <div>
                                 ${completedCount}/${totalCount} completed
-                                <button class="btn btn-sm btn-primary btn-small-icon" onclick="event.stopPropagation(); window.editJuryName('${jury.id}', '${(jury.name || '').replace(/'/g, "\\'")}')">✏️ Edit</button>
+                                <button class="btn btn-sm btn-primary btn-small-icon" onclick="event.stopPropagation(); window.editJuryDetails('${jury.id}', '${(jury.name || '').replace(/'/g, "\\'")}', '${(jury.phone || '').replace(/'/g, "\\'")}')">✏️ Edit</button>
                                 <button class="btn btn-sm btn-danger btn-small-icon" onclick="event.stopPropagation(); window.deleteJury('${jury.id}', '${(jury.name || 'Unnamed').replace(/'/g, "\\'")}')">🗑️ Delete</button>
                             </div>
                         </div>
@@ -753,12 +771,17 @@ setInterval(updateDashboardDateTime, 60000);
             document.getElementById('juryManagementContainer').innerHTML = html;
         }
         
-        window.editJuryName = async (juryId, currentName) => {
+        window.editJuryDetails = async (juryId, currentName, currentPhone) => {
             const newName = prompt('Enter new jury name:', currentName);
+            if (newName === null) return;
+            const newPhone = prompt('Enter new phone number:', currentPhone || '');
+            if (newPhone === null) return;
             if (newName && newName.trim()) {
                 try {
-                    await updateDoc(doc(db, 'juries', juryId), { name: newName.trim() });
-                    alert('✅ Name updated successfully!');
+                    const updateData = { name: newName.trim() };
+                    if (newPhone.trim()) updateData.phone = newPhone.trim();
+                    await updateDoc(doc(db, 'juries', juryId), updateData);
+                    alert('✅ Jury details updated successfully!');
                     loadAllData();
                 } catch (error) {
                     alert('❌ Error: ' + error.message);
@@ -778,6 +801,13 @@ setInterval(updateDashboardDateTime, 60000);
                         const batch = writeBatch(db);
                         scores.forEach(score => batch.delete(score.ref));
                         await batch.commit();
+
+                        const evalStatusRef = collection(db, 'evaluation_status');
+                        const evalQ = query(evalStatusRef, where('juryPin', '==', juryPin));
+                        const evalStatuses = await getDocs(evalQ);
+                        const evalBatch = writeBatch(db);
+                        evalStatuses.forEach(doc => evalBatch.delete(doc.ref));
+                        await evalBatch.commit();
                     }
                     await deleteDoc(doc(db, 'juries', juryId));
                     alert('✅ Jury deleted successfully');
@@ -803,7 +833,14 @@ setInterval(updateDashboardDateTime, 60000);
             if (!juryId) { alert('Please select a jury'); return; }
             if (selected.length === 0) { alert('Please select at least one group'); return; }
             try {
-                await updateDoc(doc(db, 'juries', juryId), { assignedGroups: selected });
+                const juryDoc = await getDoc(doc(db, 'juries', juryId));
+                const juryData = juryDoc.data();
+                const oldCompleted = juryData.completedGroups || [];
+                const newCompleted = oldCompleted.filter(g => selected.includes(g));
+                await updateDoc(doc(db, 'juries', juryId), { 
+                    assignedGroups: selected,
+                    completedGroups: newCompleted
+                });
                 alert('✅ Groups reassigned successfully');
                 loadAllData();
             } catch (error) {

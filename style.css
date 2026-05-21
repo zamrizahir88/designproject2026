@@ -272,6 +272,22 @@ h3 {
   color: white;
 }
 
+.btn-warning {
+  background: #ffb703;
+  color: white;
+}
+
+.btn-warning:hover {
+  background: #e09e00;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 183, 3, 0.3);
+}
+
+[data-theme="dark"] .btn-warning {
+  background: #ffb703;
+  color: #1a1a2e;
+}
+
 /* Button Group (Row of buttons) */
 .button-group {
   display: flex;

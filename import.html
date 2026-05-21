@@ -8,7 +8,8 @@
     <style>
         .import-container {
             max-width: 900px;
-            margin: 50px auto;
+            margin: 16px auto;
+            padding: 0 16px;
         }
         .preview-table {
             font-size: 12px;
@@ -42,7 +43,8 @@
     </style>
 </head>
 <body>
-    <div class="container import-container">
+    <button id="darkModeToggle" class="dark-mode-toggle">🌙</button>
+    <div class="import-container">
         <div class="card">
             <h1>📤 Bulk Import Groups</h1>
             <p class="subtitle">Upload CSV with student data (multiple rows per group)</p>
@@ -83,6 +85,7 @@ Group,Student Name,Matric Number,Program,Main SV,Co SV
             <button id="manualGroupBtn" class="btn btn-secondary">Add Single Group</button>
             <div id="manualForm" class="hidden" style="margin-top: 16px;">
                 <input type="number" id="manualGroupNum" placeholder="Group Number" style="margin-bottom: 8px; width: 100%;">
+                <input type="text" id="manualProjectTitle" placeholder="Project Title" style="margin-bottom: 8px; width: 100%;">
                 <input type="text" id="manualMainSV" placeholder="Main Supervisor" style="margin-bottom: 8px; width: 100%;">
                 <input type="text" id="manualCoSV" placeholder="Co-Supervisor" style="margin-bottom: 8px; width: 100%;">
                 <textarea id="manualStudents" placeholder="Students (one per line: Name | Matric | Program)" rows="4" style="margin-bottom: 8px; width: 100%;"></textarea>
@@ -93,8 +96,20 @@ Group,Student Name,Matric Number,Program,Main SV,Co SV
 
     <script type="module">
         import { db } from './firebase-config.js';
+        import { initDarkMode } from './app.js';
         import { collection, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
+        initDarkMode();
+
+        function updateToggleIcon() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const toggleBtn = document.getElementById('darkModeToggle');
+            if (toggleBtn) toggleBtn.textContent = isDark ? '☀️' : '🌙';
+        }
+        const observer = new MutationObserver(() => updateToggleIcon());
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+        updateToggleIcon();
+
         let importedGroups = new Map(); // groupNumber -> group data
         
         function parseCSVToGroups(text) {
@@ -108,6 +123,7 @@ Group,Student Name,Matric Number,Program,Main SV,Co SV
             const programIdx = headers.findIndex(h => h.toLowerCase().includes('program'));
             const mainSVIdx = headers.findIndex(h => h.toLowerCase().includes('main sv') || h.toLowerCase().includes('main'));
             const coSVIdx = headers.findIndex(h => h.toLowerCase().includes('co sv') || h.toLowerCase().includes('co'));
+            const titleIdx = headers.findIndex(h => h.toLowerCase().includes('title'));
             
             if (groupIdx === -1) {
                 alert('Could not find "Group" column. Check your CSV headers.');
@@ -148,12 +164,14 @@ Group,Student Name,Matric Number,Program,Main SV,Co SV
                 const program = fields[programIdx] || '';
                 const mainSV = fields[mainSVIdx] || '';
                 const coSV = fields[coSVIdx] || '';
+                const projectTitle = titleIdx >= 0 ? (fields[titleIdx] || '') : '';
                 
                 if (!groups.has(groupNum)) {
                     groups.set(groupNum, {
                         groupNumber: groupNum,
                         mainSV: mainSV,
                         coSV: coSV,
+                        projectTitle: projectTitle,
                         students: []
                     });
                 }
@@ -171,6 +189,7 @@ Group,Student Name,Matric Number,Program,Main SV,Co SV
                 const group = groups.get(groupNum);
                 if (mainSV && !group.mainSV) group.mainSV = mainSV;
                 if (coSV && !group.coSV) group.coSV = coSV;
+                if (projectTitle && !group.projectTitle) group.projectTitle = projectTitle;
             }
             
             return groups;
@@ -178,13 +197,14 @@ Group,Student Name,Matric Number,Program,Main SV,Co SV
         
         function displayPreview(groupsMap) {
             const previewDiv = document.getElementById('previewTable');
-            let html = '<thead><tr><th>Group</th><th>Main SV</th><th>Co SV</th><th>Students</th><th>Total</th></tr></thead><tbody>';
+            let html = '<thead><tr><th>Group</th><th>Project Title</th><th>Main SV</th><th>Co SV</th><th>Students</th><th>Total</th></tr></thead><tbody>';
             
             const sortedGroups = Array.from(groupsMap.values()).sort((a,b) => a.groupNumber - b.groupNumber);
             
             sortedGroups.forEach(group => {
                 html += `<tr>
                     <td><strong>${group.groupNumber}</strong></td>
+                    <td>${group.projectTitle || '-'}</td>
                     <td>${group.mainSV || '-'}</td>
                     <td>${group.coSV || '-'}</td>
                     <td>
@@ -225,6 +245,7 @@ Group,Student Name,Matric Number,Program,Main SV,Co SV
                         number: group.groupNumber,
                         mainSV: group.mainSV || '',
                         coSV: group.coSV || '',
+                        projectTitle: group.projectTitle || '',
                         students: studentsArray,
                         studentCount: studentsArray.length,
                         finalAverage: 0,
@@ -306,6 +327,7 @@ Group,Student Name,Matric Number,Program,Main SV,Co SV
         
         document.getElementById('saveManualBtn').addEventListener('click', async () => {
             const groupNum = parseInt(document.getElementById('manualGroupNum').value);
+            const projectTitle = document.getElementById('manualProjectTitle').value;
             const mainSV = document.getElementById('manualMainSV').value;
             const coSV = document.getElementById('manualCoSV').value;
             const studentsText = document.getElementById('manualStudents').value;
@@ -340,6 +362,7 @@ Group,Student Name,Matric Number,Program,Main SV,Co SV
                     number: groupNum,
                     mainSV: mainSV,
                     coSV: coSV,
+                    projectTitle: projectTitle,
                     students: students,
                     studentCount: students.length,
                     finalAverage: 0,
@@ -352,9 +375,11 @@ Group,Student Name,Matric Number,Program,Main SV,Co SV
                 
                 // Clear form
                 document.getElementById('manualGroupNum').value = '';
+                document.getElementById('manualProjectTitle').value = '';
                 document.getElementById('manualMainSV').value = '';
                 document.getElementById('manualCoSV').value = '';
                 document.getElementById('manualStudents').value = '';
+                document.getElementById('manualForm').classList.add('hidden');
             } catch (error) {
                 alert(`Error: ${error.message}`);
             }
