@@ -660,11 +660,11 @@ export async function overrideGroupScore(groupNumber, newScore, reason, adminNam
 export async function extendJudgingTime(newEndTime, adminName) {
   try {
     const settingsRef = doc(db, 'settings', 'current');
-    await updateDoc(settingsRef, {
+    await setDoc(settingsRef, {
       judgingEndTime: newEndTime,
       lastModifiedBy: adminName,
       lastModifiedAt: Timestamp.now()
-    });
+    }, { merge: true });
     
     await addDoc(collection(db, 'audit_logs'), {
       action: 'EXTEND_TIME',
@@ -685,11 +685,11 @@ export async function extendJudgingTime(newEndTime, adminName) {
 export async function setJudgingOpen(isOpen, adminName) {
   try {
     const settingsRef = doc(db, 'settings', 'current');
-    await updateDoc(settingsRef, {
+    await setDoc(settingsRef, {
       isOpen: isOpen,
       lastModifiedBy: adminName,
       lastModifiedAt: Timestamp.now()
-    });
+    }, { merge: true });
     
     await addDoc(collection(db, 'audit_logs'), {
       action: isOpen ? 'REOPEN_SYSTEM' : 'CLOSE_SYSTEM',

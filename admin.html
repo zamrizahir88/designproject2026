@@ -966,18 +966,27 @@ setInterval(updateDashboardDateTime, 60000);
         });
         
         document.getElementById('toggleSystemBtn').addEventListener('click', async () => {
-            const settingsRef = doc(db, 'settings', 'current');
-            const docSnap = await getDoc(settingsRef);
-            const newState = !docSnap.data()?.isOpen;
-            await setJudgingOpen(newState, 'Admin');
-            loadAllData();
+            try {
+                const settingsRef = doc(db, 'settings', 'current');
+                const docSnap = await getDoc(settingsRef);
+                const newState = !docSnap.data()?.isOpen;
+                const result = await setJudgingOpen(newState, 'Admin');
+                if (result.success) { loadAllData(); }
+                else { alert('Failed to change system state: ' + result.error); }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
         });
         
         document.getElementById('confirmExtendBtn').addEventListener('click', async () => {
             const newTime = Timestamp.fromDate(new Date(document.getElementById('newEndTime').value));
-            await extendJudgingTime(newTime, 'Admin');
-            document.getElementById('extendTimeModal').style.display = 'none';
-            loadAllData();
+            const result = await extendJudgingTime(newTime, 'Admin');
+            if (result.success) {
+                document.getElementById('extendTimeModal').style.display = 'none';
+                loadAllData();
+            } else {
+                alert('Failed to extend time: ' + (result.error || 'Unknown error'));
+            }
         });
         
         document.getElementById('cancelExtendBtn').addEventListener('click', () => {
